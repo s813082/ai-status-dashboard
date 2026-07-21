@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AI Status" />
+  <meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#16181d" media="(prefers-color-scheme: dark)" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <title>AI Status Dashboard</title>
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #ffffff; --ink: #1d2129; --muted: #6b7280;
+      --line: #e5e7eb; --ring-bg: #eceef1;
+      --claude: #d97757; --codex: #10a37f;
+      --warn-bg: #fff4e5; --warn-ink: #92400e; --err-bg: #fde8e8; --err-ink: #9b1c1c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181d; --card: #1f2229; --ink: #e6e8eb; --muted: #9aa1ac;
+        --line: #2c313a; --ring-bg: #2c313a;
+        --warn-bg: #3a2c14; --warn-ink: #f7c78a; --err-bg: #3a1c1c; --err-ink: #f6a5a5;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--ink);
+      font-family: -apple-system, "SF Pro Text", "PingFang TC", "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; }
+    body { min-height: 100vh; padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px); }
+    header { max-width: 720px; margin: 0 auto; padding: 18px 4px 10px; display: flex; align-items: baseline; justify-content: space-between; }
+    header h1 { font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+    header .brand { display: flex; flex-direction: row; align-items: baseline; gap: 12px; flex-wrap: nowrap; min-width: 0; }
+    header .brand h1 { flex: 0 0 auto; }
+    header .clock { flex: 0 1 auto; white-space: nowrap; }
+    header .clock { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+    .banner { max-width: 720px; margin: 0 auto 10px; padding: 8px 12px; border-radius: 10px; font-size: 13px; display: none; }
+    .banner.show { display: block; }
+    .banner.warn { background: var(--warn-bg); color: var(--warn-ink); }
+    .banner.err { background: var(--err-bg); color: var(--err-ink); }
+    .grid { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 460px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 14px 18px; text-align: center; }
+    .card h2 { font-size: 15px; font-weight: 650; margin-bottom: 4px; }
+    .accent { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .card.claude .accent { background: var(--claude); }
+    .card.codex .accent { background: var(--codex); }
+
+    /* 寵物：spritesheet 1536x1872 = 8 欄 x 9 列，每格 192x208 */
+    .pet-stage { height: 150px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .pet { width: 192px; height: 208px; background-repeat: no-repeat; background-position: 0 0;
+      transform: scale(.68); image-rendering: pixelated; }
+    /* 閒置：靜態幀 0 + 輕微呼吸縮放（不掃 sprite 幀，避免踩到某些寵物 idle 列的空白尾幀而閃爍） */
+    .pet.idle { background-position-x: 0; animation: petbreathe 3s ease-in-out infinite; }
+    .pet.working { animation: petframes .85s steps(8) infinite; }
+    .pet.exhausted { animation: none; background-position-x: 0 !important; opacity: .82; }
+    @keyframes petframes { from { background-position-x: 0; } to { background-position-x: -1536px; } }
+    /* 極細微呼吸：約 1px 起伏，肉眼幾乎察覺不到，只為避免完全死板 */
+    @keyframes petbreathe { 0%, 100% { transform: scale(.68); } 50% { transform: scale(.686); } }
+    .zzz { position: absolute; top: 26px; right: 50%; margin-right: -60px; font-size: 22px;
+      opacity: 0; animation: zzz 2.4s ease-in-out infinite; }
+    .pet-stage.sleeping .zzz { display: block; }
+    .pet-stage .zzz { display: none; }
+    @keyframes zzz { 0% { opacity: 0; transform: translateY(6px) scale(.8); }
+      35% { opacity: .9; } 70% { opacity: .6; transform: translateY(-10px) scale(1.1); }
+      100% { opacity: 0; transform: translateY(-20px) scale(1.2); } }
+
+    .rings { display: flex; justify-content: center; gap: 14px; margin: 6px 0 12px; }
+    .ring-wrap { width: 92px; }
+    .ring { width: 92px; height: 92px; }
+    .ring-bg { fill: none; stroke: var(--ring-bg); stroke-width: 9; }
+    .ring-fg { fill: none; stroke-width: 9; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%;
+      transition: stroke-dasharray .5s ease; }
+    .card.claude .ring-fg { stroke: var(--claude); }
+    .card.codex .ring-fg { stroke: var(--codex); }
+    .ring-fg.exhausted { stroke: #d0342c; }
+    .ring-pct { font-size: 21px; font-weight: 680; fill: var(--ink); }
+    .ring-na { font-size: 13px; fill: var(--muted); }
+    .ring-label { font-size: 12px; margin-top: 2px; color: var(--muted); }
+    .ring-reset { font-size: 10.5px; color: var(--muted); margin-top: 1px; min-height: 12px; }
+
+    .cost { display: flex; justify-content: center; gap: 18px; padding: 10px 0 4px; border-top: 1px solid var(--line); }
+    .cost .item { text-align: center; }
+    .cost .num { font-size: 16px; font-weight: 620; }
+    .cost .cap { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .cost-note { font-size: 10.5px; color: var(--muted); margin-top: 6px; }
+    .status { margin-top: 10px; font-size: 13px; font-weight: 600; }
+    .status .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; background: var(--muted); }
+    .status.working .dot { background: #22a06b; }
+    .status.exhausted .dot { background: #d0342c; }
+    .prov-err { font-size: 11px; color: var(--err-ink); margin-top: 5px; }
+    footer { max-width: 720px; margin: 14px auto 0; text-align: center; font-size: 11px; color: var(--muted); }
+
+    /* 齒輪設定入口 */
+    #gear { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+    #gear:hover { color: var(--ink); }
+    header .right { display: flex; align-items: center; gap: 10px; }
+
+    /* 設定面板 */
+    .panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 10; }
+    .panel-backdrop.show { display: block; }
+    .panel { position: fixed; z-index: 11; left: 50%; top: 50%; transform: translate(-50%,-50%);
+      width: min(92vw, 460px); max-height: 84vh; overflow-y: auto; background: var(--card);
+      border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: none; }
+    .panel.show { display: block; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .panel-head span { font-weight: 650; font-size: 15px; }
+    .panel-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 8px 0 4px; cursor: pointer; }
+    .wake-status { font-size: 11.5px; color: var(--muted); padding: 0 0 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+    .toggle-row input { width: 18px; height: 18px; }
+    .panel h3 { font-size: 13px; color: var(--muted); font-weight: 600; margin: 10px 0 6px; }
+    .thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pet-thumb { width: 64px; cursor: pointer; text-align: center; border: 2px solid transparent; border-radius: 10px; padding: 4px; }
+    .pet-thumb .img { width: 64px; height: 69px; background-repeat: no-repeat; background-position: 0 0; background-size: 512px 624px; image-rendering: pixelated; margin: 0 auto; }
+    .pet-thumb .nm { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pet-thumb.selected { border-color: var(--claude); }
+    .card.codex ~ * .pet-thumb.selected, #thumbs-codex .pet-thumb.selected { border-color: var(--codex); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>AI Status</h1>
+      <div class="clock" id="clock">—</div>
+    </div>
+    <div class="right">
+      <button id="gear" aria-label="設定">⚙</button>
+    </div>
+  </header>
+
+  <div class="banner warn" id="banner-stale">資料稍舊 · CodexBar 未連上，顯示上次快取</div>
+  <div class="banner err" id="banner-format">資料格式不符 · CodexBar snapshot 版本無法辨識</div>
+
+  <div class="grid">
+    <section class="card claude" id="card-claude">
+      <h2><span class="accent"></span>Claude Code</h2>
+      <div class="pet-stage" id="stage-claude">
+        <div class="pet idle" id="pet-claude" style="background-image:url(/pets/library/clawd/spritesheet.webp)"></div>
+        <div class="zzz">😴</div>
+      </div>
+      <div class="rings" id="rings-claude"></div>
+      <div class="cost" id="cost-claude"></div>
+      <div class="cost-note">花費為本機推算（掃本機 session log）</div>
+      <div class="status" id="status-claude"><span class="dot"></span>載入中…</div>
+      <div class="prov-err" id="err-claude"></div>
+    </section>
+
+    <section class="card codex" id="card-codex">
+      <h2><span class="accent"></span>Codex</h2>
+      <div class="pet-stage" id="stage-codex">
+        <div class="pet idle" id="pet-codex" style="background-image:url(/pets/library/boba/spritesheet.webp)"></div>
+        <div class="zzz">😴</div>
+      </div>
+      <div class="rings" id="rings-codex"></div>
+      <div class="cost" id="cost-codex"></div>
+      <div class="cost-note">花費為本機推算（掃本機 session log）</div>
+      <div class="status" id="status-codex"><span class="dot"></span>載入中…</div>
+      <div class="prov-err" id="err-codex"></div>
+    </section>
+  </div>
+
+  <div class="panel-backdrop" id="panel-backdrop"></div>
+  <div class="panel" id="panel" role="dialog" aria-label="設定">
+    <div class="panel-head"><span>設定</span><button class="panel-close" id="panel-close" aria-label="關閉">✕</button></div>
+    <label class="toggle-row"><input type="checkbox" id="awake-toggle" checked> 🔆 螢幕恆亮（避免 iPhone 待機）</label>
+    <div id="wake-status" class="wake-status">恆亮狀態：偵測中…</div>
+    <h3>Claude Code 寵物</h3>
+    <div class="thumbs" id="thumbs-claude"></div>
+    <h3>Codex 寵物</h3>
+    <div class="thumbs" id="thumbs-codex"></div>
+  </div>
+
+  <!-- keep-awake fallback：舊 iOS 無 wakeLock 時，播放此極小靜音循環影片維持螢幕不熄（需點一下畫面啟動）-->
+  <video id="nosleep" muted loop playsinline webkit-playsinline preload="auto"
+    style="position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;pointer-events:none;">
+    <source src="/keepawake.mp4?v=2" type="video/mp4">
+  </video>
+
+  <footer id="footer">AI Status Dashboard · 每 5 秒更新運作狀態，額度/花費每 60 秒更新</footer>
+
+  <script>
+    "use strict";
+    var POLL_MS = 5000;
+    // sprite 動畫 row：idle=第0列、working=第2列（run）。格高 208px。
+    var PET_ROWS = { idle: 0, working: 2, exhausted: 0 };
+    var WIN_META = { session: "5 小時", weekly: "本週" };
+    var STATUS_TEXT = { idle: "閒置", working: "工作中", exhausted: "額度用完（睡著）" };
+    var RING_C = 2 * Math.PI * 42; // r=42
+
+    // per-column 快取：資料/狀態未變就不動 DOM，消除每 5s 重建造成的閃爍
+    var lastSig = { claude: null, codex: null };      // JSON.stringify({windows,cost})
+    var lastActivity = { claude: null, codex: null };
+    var lastPetId = { claude: null, codex: null };
+    var petConfig = { claude: null, codex: null }; // 目前選擇（由 /api/status 同步）
+
+    function fmtUpdated(iso) {
+      if (!iso) return "—";
+      var diff = Date.now() - new Date(iso).getTime();
+      if (isNaN(diff)) return "—";
+      var min = Math.floor(diff / 60000);
+      if (min <= 0) return "剛剛";
+      if (min < 60) return min + " 分鐘前";
+      var hr = Math.floor(min / 60);
+      return hr + " 小時前";
+    }
+    function fmtUSD(v) { return (v == null) ? "—" : "$" + Number(v).toFixed(2); }
+    function fmtReset(iso) {
+      if (!iso) return "";
+      var d = new Date(iso); if (isNaN(d.getTime())) return "";
+      var now = Date.now(); var diff = d.getTime() - now;
+      if (diff <= 0) return "已重置";
+      var h = Math.floor(diff / 3600000);
+      if (h >= 24) return "重置 " + Math.floor(h / 24) + " 天後";
+      if (h >= 1) return "重置 " + h + " 小時後";
+      return "重置 " + Math.max(1, Math.floor(diff / 60000)) + " 分後";
+    }
+
+    function ringSVG(win) {
+      var used = (win && win.usedPercent != null) ? Math.max(0, Math.min(100, win.usedPercent)) : null;
+      var exhausted = win && win.remainingPercent != null && win.remainingPercent <= 0;
+      var label = WIN_META[win && win.kind] || (win && win.kind) || "";
+      if (used == null) {
+        return '<div class="ring-wrap"><svg class="ring" viewBox="0 0 100 100">' +
+          '<circle class="ring-bg" cx="50" cy="50" r="42"></circle>' +
+          '<text class="ring-na" x="50" y="54" text-anchor="middle">無資料</text></svg>' +
+          '<div class="ring-label">' + label + '</div><div class="ring-reset"></div></div>';
+      }
+      var dash = (used / 100 * RING_C).toFixed(1) + " " + RING_C.toFixed(1);
+      return '<div class="ring-wrap"><svg class="ring" viewBox="0 0 100 100">' +
+        '<circle class="ring-bg" cx="50" cy="50" r="42"></circle>' +
+        '<circle class="ring-fg' + (exhausted ? " exhausted" : "") + '" cx="50" cy="50" r="42" style="stroke-dasharray:' + dash + '"></circle>' +
+        '<text class="ring-pct" x="50" y="57" text-anchor="middle">' + used + '%</text></svg>' +
+        '<div class="ring-label">' + label + '</div>' +
+        '<div class="ring-reset">' + fmtReset(win.resetAt) + '</div></div>';
+    }
+
+    function renderRings(container, windows) {
+      // 固定順序：先 session（5hr）再 weekly；缺的顯示「無資料」
+      var byKind = {};
+      (windows || []).forEach(function (w) { if (w && w.kind) byKind[w.kind] = w; });
+      var order = ["session", "weekly"];
+      var html = order.map(function (k) {
+        return ringSVG(byKind[k] || { kind: k, usedPercent: null });
+      }).join("");
+      container.innerHTML = html;
+    }
+
+    function renderCost(container, cost) {
+      cost = cost || {};
+      container.innerHTML =
+        '<div class="item"><div class="num">' + fmtUSD(cost.todayUSD) + '</div><div class="cap">今日</div></div>' +
+        '<div class="item"><div class="num">' + fmtUSD(cost.last30DaysUSD) + '</div><div class="cap">近 30 天</div></div>';
+    }
+
+    // 只在 activity 或選定 petId 改變時才動寵物 DOM，避免動畫重啟與重繪
+    function setPet(id, activity, petId) {
+      var pet = document.getElementById("pet-" + id);
+      var stage = document.getElementById("stage-" + id);
+      if (petId && petId !== lastPetId[id]) {
+        pet.style.backgroundImage = "url(/pets/library/" + petId + "/spritesheet.webp)";
+        lastPetId[id] = petId;
+      }
+      if (activity !== lastActivity[id]) {
+        var row = PET_ROWS[activity] != null ? PET_ROWS[activity] : 0;
+        pet.style.backgroundPositionY = (-(row * 208)) + "px";
+        pet.className = "pet " + (activity === "working" ? "working" : activity === "exhausted" ? "exhausted" : "idle");
+        if (activity === "exhausted") stage.classList.add("sleeping");
+        else stage.classList.remove("sleeping");
+        lastActivity[id] = activity;
+      }
+    }
+
+    function renderProvider(id, p, petId) {
+      var activity = (p && p.activity) || "idle";
+      setPet(id, activity, petId);
+      // 額度/花費 60s 才變：簽章未變就跳過 SVG 重建（消除每 5s 閃爍）
+      var sig = JSON.stringify({
+        w: p && p.windows,
+        c: p && p.cost,
+        missing: p && p.missing,
+        err: p && p.error && p.error.message,
+      });
+      if (sig !== lastSig[id]) {
+        renderRings(document.getElementById("rings-" + id), p && p.windows);
+        renderCost(document.getElementById("cost-" + id), p && p.cost);
+        var errEl = document.getElementById("err-" + id);
+        if (p && p.error && p.error.message) errEl.textContent = "⚠ " + p.error.message;
+        else if (p && p.missing) errEl.textContent = "⚠ 此 provider 未在 CodexBar 啟用或無回應";
+        else errEl.textContent = "";
+        lastSig[id] = sig;
+      }
+      // 狀態文字每次更新（便宜、無 transition，不閃）
+      var st = document.getElementById("status-" + id);
+      st.className = "status " + activity;
+      st.innerHTML = '<span class="dot"></span>' + (STATUS_TEXT[activity] || "—");
+    }
+
+    function render(s) {
+      document.getElementById("banner-stale").classList.toggle("show", !!s.stale && !s.loading);
+      document.getElementById("banner-format").classList.toggle("show", !!s.formatError);
+      var upd = document.getElementById("updated");
+      if (upd) upd.textContent = s.loading ? "等待 CodexBar…" : "更新於 " + fmtUpdated(s.updatedAt);
+      var provs = s.providers || {};
+      petConfig = s.petConfig || petConfig;
+      renderProvider("claude", provs.claude, petConfig.claude);
+      renderProvider("codex", provs.codex, petConfig.codex);
+    }
+
+    async function tick() {
+      try {
+        var r = await fetch("/api/status", { cache: "no-store" });
+        var s = await r.json();
+        render(s);
+      } catch (e) {
+        var upd = document.getElementById("updated");
+        if (upd) upd.textContent = "無法連上 dashboard server";
+      }
+    }
+
+    // ===== 設定面板：換寵物 =====
+    function petThumb(column, pet, selectedId) {
+      var div = document.createElement("div");
+      div.className = "pet-thumb" + (pet.id === selectedId ? " selected" : "");
+      div.title = pet.displayName;
+      div.innerHTML =
+        '<div class="img" style="background-image:url(/pets/library/' + pet.id + '/spritesheet.webp)"></div>' +
+        '<div class="nm">' + pet.displayName + '</div>';
+      div.addEventListener("click", function () { selectPet(column, pet.id); });
+      return div;
+    }
+
+    async function loadPets() {
+      var pets;
+      try {
+        pets = await (await fetch("/api/pets", { cache: "no-store" })).json();
+      } catch (e) { return; }
+      ["claude", "codex"].forEach(function (column) {
+        var box = document.getElementById("thumbs-" + column);
+        box.innerHTML = "";
+        pets.forEach(function (pet) { box.appendChild(petThumb(column, pet, petConfig[column])); });
+      });
+    }
+
+    async function selectPet(column, petId) {
+      try {
+        var r = await fetch("/api/select", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ column: column, petId: petId }),
+        });
+        if (!r.ok) return;
+        var j = await r.json();
+        petConfig = j.petConfig || petConfig;
+        // 立即套用該欄寵物，不等下一次 poll
+        setPet(column, lastActivity[column] || "idle", petConfig[column]);
+        // 更新面板選取高亮
+        var box = document.getElementById("thumbs-" + column);
+        Array.prototype.forEach.call(box.children, function (el) { el.classList.remove("selected"); });
+        Array.prototype.forEach.call(box.children, function (el) {
+          if (el.title && el.querySelector(".img").style.backgroundImage.indexOf("/" + petId + "/") > -1) el.classList.add("selected");
+        });
+      } catch (e) { /* 失敗不致命 */ }
+    }
+
+    function openPanel() {
+      document.getElementById("panel").classList.add("show");
+      document.getElementById("panel-backdrop").classList.add("show");
+      loadPets();
+    }
+    function closePanel() {
+      document.getElementById("panel").classList.remove("show");
+      document.getElementById("panel-backdrop").classList.remove("show");
+    }
+    document.getElementById("gear").addEventListener("click", openPanel);
+    document.getElementById("panel-close").addEventListener("click", closePanel);
+    document.getElementById("panel-backdrop").addEventListener("click", closePanel);
+
+    // ===== 螢幕恆亮（Screen Wake Lock）=====
+    var wakeLock = null;
+    var wakeEnabled = true; // 預設開（決議 D4）
+
+    var keepVid = document.getElementById("nosleep");
+    var vidPlaying = false;
+    if (keepVid) {
+      keepVid.addEventListener("playing", function () { vidPlaying = true; if (!wakeLock) setWakeStatus("影片模式保持中 ✓（螢幕應維持恆亮）"); });
+      keepVid.addEventListener("pause", function () { vidPlaying = false; });
+    }
+
+    function setWakeStatus(msg) {
+      var el = document.getElementById("wake-status");
+      if (el) el.textContent = "恆亮狀態：" + msg;
+    }
+
+    function tryVideoKeepAwake() {
+      if (!wakeEnabled || !keepVid) return;
+      var p = keepVid.play();
+      if (p && p.catch) p.catch(function () { /* iOS 需使用者手勢，稍後由點擊觸發 */ });
+    }
+    function stopVideoKeepAwake() {
+      if (keepVid) { try { keepVid.pause(); keepVid.currentTime = 0; } catch (e) {} }
+    }
+
+    async function requestWakeLock() {
+      if (!wakeEnabled) { setWakeStatus("已關閉"); return; }
+      // 原生 Screen Wake Lock（iOS Safari 16.4+）優先
+      if ("wakeLock" in navigator) {
+        if (document.visibilityState !== "visible") { setWakeStatus("頁面非前景，暫不鎖定"); return; }
+        try {
+          wakeLock = await navigator.wakeLock.request("screen");
+          setWakeStatus("已鎖定螢幕 ✓（原生）");
+          wakeLock.addEventListener("release", function () {
+            wakeLock = null;
+            setWakeStatus("鎖被系統釋放，改用影片模式…");
+            tryVideoKeepAwake();
+          });
+          return;
+        } catch (e) { /* 落到影片模式 */ }
+      }
+      // 無原生 API 或請求失敗：改用影片模式（舊 iOS 唯一可行）
+      tryVideoKeepAwake();
+      if (!vidPlaying) setWakeStatus("點一下畫面即可啟用恆亮（影片模式）");
+    }
+    async function releaseWakeLock() {
+      try { if (wakeLock) await wakeLock.release(); } catch (e) {}
+      wakeLock = null;
+      stopVideoKeepAwake();
+      setWakeStatus("已關閉");
+    }
+    document.getElementById("awake-toggle").addEventListener("change", function (e) {
+      wakeEnabled = e.target.checked;
+      if (wakeEnabled) { requestWakeLock(); tryVideoKeepAwake(); } else releaseWakeLock();
+    });
+    // 鎖/影片於頁面隱藏時會被系統中止 → 回到可見時重取
+    document.addEventListener("visibilitychange", function () {
+      if (wakeEnabled && document.visibilityState === "visible") { requestWakeLock(); tryVideoKeepAwake(); }
+    });
+    // iOS 需使用者手勢才能播放影片：第一次點/觸控畫面時啟用恆亮
+    ["click", "touchend"].forEach(function (ev) {
+      document.addEventListener(ev, function () { if (wakeEnabled) { requestWakeLock(); tryVideoKeepAwake(); } }, { passive: true });
+    });
+    requestWakeLock();
+
+    // 頁首時鐘 yyyy/mm/dd HH:MM:SS（每秒更新）
+    function pad2(n) { return (n < 10 ? "0" : "") + n; }
+    function tickClock() {
+      var d = new Date();
+      document.getElementById("clock").textContent =
+        d.getFullYear() + "/" + pad2(d.getMonth() + 1) + "/" + pad2(d.getDate()) + " " +
+        pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    tick();
+    setInterval(tick, POLL_MS);
+  </script>
+</body>
+</html>

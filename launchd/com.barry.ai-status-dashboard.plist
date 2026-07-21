@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  服務二：我方 Node dashboard server（畫面）。
+  node 路徑寫死絕對路徑（launchd 不載入 nvm shim）；換 nvm 版本時需更新此路徑（見 README 維護提醒）。
+  安裝時 cp 到 ~/Library/LaunchAgents/，並將 __REPLACE_WITH_DASHBOARD_TOKEN__ 換成實際 token。
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.barry.ai-status-dashboard</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/YOUR_USERNAME/.nvm/versions/node/v22.17.0/bin/node</string>
+        <string>/Users/YOUR_USERNAME/Documents/vibe-coding/ai-status-dashboard/src/server.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USERNAME/Documents/vibe-coding/ai-status-dashboard</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CODEXBAR_DASHBOARD_TOKEN</key>
+        <string>__REPLACE_WITH_DASHBOARD_TOKEN__</string>
+        <key>PORT</key>
+        <string>8787</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USERNAME/Documents/vibe-coding/ai-status-dashboard/logs/out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USERNAME/Documents/vibe-coding/ai-status-dashboard/logs/err.log</string>
+</dict>
+</plist>

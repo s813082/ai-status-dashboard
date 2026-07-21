@@ -1,0 +1,33 @@
+# 相依套件
+node_modules/
+
+# collector 落地快取（執行期產生，不進版控）
+data/*.json
+
+# 執行期 log
+logs/
+
+# 含真實 token 的 local plist（只有 placeholder 版進版控）
+launchd/*.local.plist
+*.local.plist
+
+# 各類本機憑證/環境檔
+.env
+.env.local
+*.token
+.token*
+
+# 系統雜物
+.DS_Store
+
+# 保留 logs 目錄結構
+!logs/.gitkeep
+
+# 寵物素材為 petdex 第三方投稿（含版權/肖像疑慮），不進公開 repo；
+# 本機保留可正常顯示，clone 後請自行 `npm run add-pet <slug>` 補齊
+src/public/pets/library/*/
+src/public/pets/claude/
+src/public/pets/codex/
+!src/public/pets/library/.gitkeep
+# 由寵物幀裁切的 icon（衍生自第三方素材）
+src/public/apple-touch-icon.png
