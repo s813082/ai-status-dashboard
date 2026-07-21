@@ -67,8 +67,10 @@ function listPets() {
     if (!ent.isDirectory()) continue;
     try {
       const meta = JSON.parse(fs.readFileSync(path.join(LIBRARY_DIR, ent.name, 'pet.json'), 'utf8'));
+      // id 一律用「資料夾名」當鍵：sprite 由 /pets/library/<id>/ 提供服務，
+      // 若改用 pet.json 的 id（可能與資料夾名不同，如 frieren-3 vs frieren）會導致取圖 404 破圖。
       pets.push({
-        id: meta.id || ent.name,
+        id: ent.name,
         displayName: meta.displayName || ent.name,
         description: meta.description || '',
       });
