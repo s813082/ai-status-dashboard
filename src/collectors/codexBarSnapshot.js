@@ -1,5 +1,8 @@
 'use strict';
 
+// @deprecated（v0.3.0 起）：資料源已改為 tokscale CLI，見 ./tokscaleSnapshot.js。
+// 本檔已不再被 server.js require，僅保留供回退參考，後續變更將移除。
+//
 // CodexBar snapshot collector。
 // 每 60s GET 本機 codexbar serve 的 /dashboard/v1/snapshot，帶 Bearer token，
 // 僅保留 id==='codex' / 'claude'，正規化後存記憶體 + 落地 data/snapshot.json。

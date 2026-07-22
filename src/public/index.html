@@ -17,12 +17,23 @@
       --claude: #d97757; --codex: #10a37f;
       --warn-bg: #fff4e5; --warn-ink: #92400e; --err-bg: #fde8e8; --err-ink: #9b1c1c;
     }
+    /* 深色：系統偏好 + 手動覆寫（data-theme 由設定頁寫入，優先於系統） */
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #16181d; --card: #1f2229; --ink: #e6e8eb; --muted: #9aa1ac;
         --line: #2c313a; --ring-bg: #2c313a;
         --warn-bg: #3a2c14; --warn-ink: #f7c78a; --err-bg: #3a1c1c; --err-ink: #f6a5a5;
       }
+    }
+    :root[data-theme="light"] {
+      --bg: #f5f6f8; --card: #ffffff; --ink: #1d2129; --muted: #6b7280;
+      --line: #e5e7eb; --ring-bg: #eceef1;
+      --warn-bg: #fff4e5; --warn-ink: #92400e; --err-bg: #fde8e8; --err-ink: #9b1c1c;
+    }
+    :root[data-theme="dark"] {
+      --bg: #16181d; --card: #1f2229; --ink: #e6e8eb; --muted: #9aa1ac;
+      --line: #2c313a; --ring-bg: #2c313a;
+      --warn-bg: #3a2c14; --warn-ink: #f7c78a; --err-bg: #3a1c1c; --err-ink: #f6a5a5;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { background: var(--bg); color: var(--ink);
@@ -33,30 +44,45 @@
     header h1 { font-size: 17px; font-weight: 650; letter-spacing: .2px; }
     header .brand { display: flex; flex-direction: row; align-items: baseline; gap: 12px; flex-wrap: nowrap; min-width: 0; }
     header .brand h1 { flex: 0 0 auto; }
-    header .clock { flex: 0 1 auto; white-space: nowrap; }
-    header .clock { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+    header .clock { flex: 0 1 auto; white-space: nowrap; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+    header .right { display: flex; align-items: center; gap: 10px; }
+    .navbtn { background: none; border: none; color: var(--muted); font-size: 14px; cursor: pointer; padding: 2px 6px; line-height: 1; text-decoration: none; }
+    .navbtn:hover { color: var(--ink); }
+    #gear { font-size: 18px; }
+
     .banner { max-width: 720px; margin: 0 auto 10px; padding: 8px 12px; border-radius: 10px; font-size: 13px; display: none; }
     .banner.show { display: block; }
     .banner.warn { background: var(--warn-bg); color: var(--warn-ink); }
     .banner.err { background: var(--err-bg); color: var(--err-ink); }
+    .banner.alert { background: var(--warn-bg); color: var(--warn-ink); font-weight: 600; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+    .wrap { max-width: 720px; margin: 0 auto; }
+
+    /* Launcher */
+    .launch-title { max-width: 720px; margin: 4px auto 14px; font-size: 15px; font-weight: 650; color: var(--ink); }
+    .tiles { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 460px) { .tiles { grid-template-columns: 1fr; } }
+    .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; text-decoration: none; color: var(--ink); display: block; transition: transform .08s ease; }
+    .tile:hover { transform: translateY(-2px); }
+    .tile .t-name { font-size: 15px; font-weight: 640; }
+    .tile .t-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .tile .t-ico { font-size: 20px; margin-bottom: 6px; display: block; }
+
     .grid { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 460px) { .grid { grid-template-columns: 1fr; } }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 14px 18px; text-align: center; }
+    .card.hidden { display: none; }
     .card h2 { font-size: 15px; font-weight: 650; margin-bottom: 4px; }
     .accent { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
     .card.claude .accent { background: var(--claude); }
     .card.codex .accent { background: var(--codex); }
 
-    /* 寵物：spritesheet 1536x1872 = 8 欄 x 9 列，每格 192x208 */
     .pet-stage { height: 150px; display: flex; align-items: center; justify-content: center; position: relative; }
     .pet { width: 192px; height: 208px; background-repeat: no-repeat; background-position: 0 0;
       transform: scale(.68); image-rendering: pixelated; }
-    /* 閒置：靜態幀 0 + 輕微呼吸縮放（不掃 sprite 幀，避免踩到某些寵物 idle 列的空白尾幀而閃爍） */
-    .pet.idle { background-position-x: 0; animation: petbreathe 3s ease-in-out infinite; }
-    .pet.working { animation: petframes .85s steps(8) infinite; }
-    .pet.exhausted { animation: none; background-position-x: 0 !important; opacity: .82; }
-    @keyframes petframes { from { background-position-x: 0; } to { background-position-x: -1536px; } }
-    /* 極細微呼吸：約 1px 起伏，肉眼幾乎察覺不到，只為避免完全死板 */
+    .pet.exhausted { opacity: .82; }
     @keyframes petbreathe { 0%, 100% { transform: scale(.68); } 50% { transform: scale(.686); } }
     .zzz { position: absolute; top: 26px; right: 50%; margin-right: -60px; font-size: 22px;
       opacity: 0; animation: zzz 2.4s ease-in-out infinite; }
@@ -92,139 +118,280 @@
     .prov-err { font-size: 11px; color: var(--err-ink); margin-top: 5px; }
     footer { max-width: 720px; margin: 14px auto 0; text-align: center; font-size: 11px; color: var(--muted); }
 
-    /* 齒輪設定入口 */
-    #gear { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 2px 6px; line-height: 1; }
-    #gear:hover { color: var(--ink); }
-    header .right { display: flex; align-items: center; gap: 10px; }
+    /* 報表視圖 */
+    .panel-card { max-width: 720px; margin: 0 auto; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+    .view-title { font-size: 15px; font-weight: 650; margin-bottom: 12px; }
+    .chart-box { position: relative; height: 300px; }
+    .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 0; display: none; }
+    .report-total { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: right; }
 
-    /* 設定面板 */
-    .panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 10; }
-    .panel-backdrop.show { display: block; }
-    .panel { position: fixed; z-index: 11; left: 50%; top: 50%; transform: translate(-50%,-50%);
-      width: min(92vw, 460px); max-height: 84vh; overflow-y: auto; background: var(--card);
-      border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: none; }
-    .panel.show { display: block; }
-    .panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .panel-head span { font-weight: 650; font-size: 15px; }
-    .panel-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
-    .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 8px 0 4px; cursor: pointer; }
-    .wake-status { font-size: 11.5px; color: var(--muted); padding: 0 0 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+    /* 熱力圖 */
+    .hm-scroll { overflow-x: auto; padding-bottom: 6px; }
+    #heatmap-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 11px); gap: 3px; width: max-content; }
+    .hm { width: 11px; height: 11px; border-radius: 2px; background: var(--ring-bg); }
+    .hm1 { background: #9be9a8; } .hm2 { background: #40c463; } .hm3 { background: #30a14e; } .hm4 { background: #216e39; }
+    .hm-legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+    /* 自訂區間 */
+    .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+    .field input, .field select { font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); }
+    .btn { font-size: 14px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--claude); color: #fff; cursor: pointer; }
+    .btn:hover { opacity: .9; }
+    .hint { font-size: 12px; color: var(--err-ink); min-height: 16px; }
+
+    /* 設定 */
+    .set-group { padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .set-group:last-child { border-bottom: none; }
+    .set-group h3 { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+    .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 4px 0; cursor: pointer; }
     .toggle-row input { width: 18px; height: 18px; }
-    .panel h3 { font-size: 13px; color: var(--muted); font-weight: 600; margin: 10px 0 6px; }
+    .wake-status { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
     .thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
     .pet-thumb { width: 64px; cursor: pointer; text-align: center; border: 2px solid transparent; border-radius: 10px; padding: 4px; }
     .pet-thumb .img { width: 64px; height: 69px; background-repeat: no-repeat; background-position: 0 0; background-size: 512px 624px; image-rendering: pixelated; margin: 0 auto; }
     .pet-thumb .nm { font-size: 10px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .pet-thumb.selected { border-color: var(--claude); }
-    .card.codex ~ * .pet-thumb.selected, #thumbs-codex .pet-thumb.selected { border-color: var(--codex); }
+    #thumbs-codex .pet-thumb.selected { border-color: var(--codex); }
+    .budget-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 8px; }
+    .budget-row .field input { width: 110px; }
+    .saved-note { font-size: 12px; color: #22a06b; margin-left: 8px; opacity: 0; transition: opacity .2s; }
+    .saved-note.show { opacity: 1; }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <h1>AI Status</h1>
+      <h1 data-i18n="appTitle">AI Status</h1>
       <div class="clock" id="clock">—</div>
     </div>
     <div class="right">
-      <button id="gear" aria-label="設定">⚙</button>
+      <a class="navbtn" id="back" href="#/" data-i18n="nav.back" style="display:none">← 選單</a>
+      <a class="navbtn" id="gear" href="#/settings" aria-label="設定">⚙</a>
     </div>
   </header>
 
-  <div class="banner warn" id="banner-stale">資料稍舊 · CodexBar 未連上，顯示上次快取</div>
-  <div class="banner err" id="banner-format">資料格式不符 · CodexBar snapshot 版本無法辨識</div>
+  <!-- 全域警示橫幅（Notification 不可用時的降級） -->
+  <div class="banner alert" id="banner-alert"></div>
 
-  <div class="grid">
-    <section class="card claude" id="card-claude">
-      <h2><span class="accent"></span>Claude Code</h2>
-      <div class="pet-stage" id="stage-claude">
-        <div class="pet idle" id="pet-claude" style="background-image:url(/pets/library/clawd/spritesheet.webp)"></div>
-        <div class="zzz">😴</div>
+  <!-- ===== Launcher 首頁 ===== -->
+  <section class="view" id="view-launcher">
+    <div class="launch-title" data-i18n="launcher.title">AI 用量中心</div>
+    <div class="tiles">
+      <a class="tile" href="#/today"><span class="t-ico">📊</span><div class="t-name" data-i18n="launcher.today">今日用量</div><div class="t-desc" data-i18n="launcher.today.desc"></div></a>
+      <a class="tile" href="#/usage"><span class="t-ico">📈</span><div class="t-name" data-i18n="launcher.usage">用量報表</div><div class="t-desc" data-i18n="launcher.usage.desc"></div></a>
+      <a class="tile" href="#/pie"><span class="t-ico">🥧</span><div class="t-name" data-i18n="launcher.pie">工具佔比</div><div class="t-desc" data-i18n="launcher.pie.desc"></div></a>
+      <a class="tile" href="#/heatmap"><span class="t-ico">🟩</span><div class="t-name" data-i18n="launcher.heatmap">使用熱力圖</div><div class="t-desc" data-i18n="launcher.heatmap.desc"></div></a>
+      <a class="tile" href="#/alerts"><span class="t-ico">🔔</span><div class="t-name" data-i18n="launcher.alerts">額度警示</div><div class="t-desc" data-i18n="launcher.alerts.desc"></div></a>
+      <a class="tile" href="#/settings"><span class="t-ico">⚙️</span><div class="t-name" data-i18n="launcher.settings">設定</div><div class="t-desc" data-i18n="launcher.settings.desc"></div></a>
+    </div>
+  </section>
+
+  <!-- ===== 今日（現有主畫面） ===== -->
+  <section class="view" id="view-today">
+    <div class="banner warn" id="banner-stale" data-i18n="banner.stale"></div>
+    <div class="banner err" id="banner-format" data-i18n="banner.format"></div>
+    <div class="banner err" id="banner-notokscale" data-i18n="banner.notokscale"></div>
+    <div class="grid">
+      <section class="card claude" id="card-claude">
+        <h2><span class="accent"></span>Claude Code</h2>
+        <div class="pet-stage" id="stage-claude">
+          <div class="pet idle" id="pet-claude" style="background-image:url(/pets/library/clawd/spritesheet.webp)"></div>
+          <div class="zzz">😴</div>
+        </div>
+        <div class="rings" id="rings-claude"></div>
+        <div class="cost" id="cost-claude"></div>
+        <div class="cost-note" data-i18n="cost.note"></div>
+        <div class="status" id="status-claude"><span class="dot"></span>—</div>
+        <div class="prov-err" id="err-claude"></div>
+      </section>
+      <section class="card codex" id="card-codex">
+        <h2><span class="accent"></span>Codex</h2>
+        <div class="pet-stage" id="stage-codex">
+          <div class="pet idle" id="pet-codex" style="background-image:url(/pets/library/boba/spritesheet.webp)"></div>
+          <div class="zzz">😴</div>
+        </div>
+        <div class="rings" id="rings-codex"></div>
+        <div class="cost" id="cost-codex"></div>
+        <div class="cost-note" data-i18n="cost.note"></div>
+        <div class="status" id="status-codex"><span class="dot"></span>—</div>
+        <div class="prov-err" id="err-codex"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ===== 用量報表（週/月/自訂合併，可分工具）===== -->
+  <section class="view" id="view-usage">
+    <div class="panel-card">
+      <div class="view-title" data-i18n="usage.title">用量報表</div>
+      <div class="row">
+        <label class="field"><span data-i18n="usage.period">期間</span>
+          <select id="usage-period">
+            <option value="week" data-i18n="usage.week">本週</option>
+            <option value="month" data-i18n="usage.month">本月</option>
+            <option value="custom" data-i18n="usage.custom">自訂</option>
+          </select>
+        </label>
+        <label class="field" id="usage-since-wrap" style="display:none"><span data-i18n="custom.since">起始日</span><input type="date" id="usage-since"></label>
+        <label class="field" id="usage-until-wrap" style="display:none"><span data-i18n="custom.until">結束日</span><input type="date" id="usage-until"></label>
+        <button class="btn" id="usage-go" style="display:none" data-i18n="custom.query">查詢</button>
       </div>
-      <div class="rings" id="rings-claude"></div>
-      <div class="cost" id="cost-claude"></div>
-      <div class="cost-note">花費為本機推算（掃本機 session log）</div>
-      <div class="status" id="status-claude"><span class="dot"></span>載入中…</div>
-      <div class="prov-err" id="err-claude"></div>
-    </section>
+      <div class="hint" id="usage-hint"></div>
+      <div class="chart-box"><canvas id="chart-usage"></canvas></div>
+      <div class="empty" id="usage-empty" data-i18n="report.empty"></div>
+    </div>
+  </section>
 
-    <section class="card codex" id="card-codex">
-      <h2><span class="accent"></span>Codex</h2>
-      <div class="pet-stage" id="stage-codex">
-        <div class="pet idle" id="pet-codex" style="background-image:url(/pets/library/boba/spritesheet.webp)"></div>
-        <div class="zzz">😴</div>
+  <!-- ===== 工具佔比圓餅（可依工具或模型）===== -->
+  <section class="view" id="view-pie">
+    <div class="panel-card">
+      <div class="view-title" data-i18n="launcher.pie">工具佔比</div>
+      <div class="row">
+        <label class="field"><span data-i18n="pie.by">分組</span>
+          <select id="pie-by">
+            <option value="client" data-i18n="pie.byTool">依工具</option>
+            <option value="model" data-i18n="pie.byModel">依模型</option>
+          </select>
+        </label>
       </div>
-      <div class="rings" id="rings-codex"></div>
-      <div class="cost" id="cost-codex"></div>
-      <div class="cost-note">花費為本機推算（掃本機 session log）</div>
-      <div class="status" id="status-codex"><span class="dot"></span>載入中…</div>
-      <div class="prov-err" id="err-codex"></div>
-    </section>
-  </div>
+      <div class="chart-box"><canvas id="chart-pie"></canvas></div>
+      <div class="empty" id="pie-empty" data-i18n="report.empty"></div>
+    </div>
+  </section>
 
-  <div class="panel-backdrop" id="panel-backdrop"></div>
-  <div class="panel" id="panel" role="dialog" aria-label="設定">
-    <div class="panel-head"><span>設定</span><button class="panel-close" id="panel-close" aria-label="關閉">✕</button></div>
-    <label class="toggle-row"><input type="checkbox" id="awake-toggle" checked> 🔆 螢幕恆亮（避免 iPhone 待機）</label>
-    <div id="wake-status" class="wake-status">恆亮狀態：偵測中…</div>
-    <h3>Claude Code 寵物</h3>
-    <div class="thumbs" id="thumbs-claude"></div>
-    <h3>Codex 寵物</h3>
-    <div class="thumbs" id="thumbs-codex"></div>
-  </div>
+  <!-- ===== 熱力圖 ===== -->
+  <section class="view" id="view-heatmap">
+    <div class="panel-card">
+      <div class="view-title" data-i18n="launcher.heatmap">使用熱力圖</div>
+      <div class="hm-scroll"><div id="heatmap-grid"></div></div>
+      <div class="empty" id="heatmap-empty" data-i18n="report.empty"></div>
+      <div class="hm-legend"><span>less</span><span class="hm"></span><span class="hm hm1"></span><span class="hm hm2"></span><span class="hm hm3"></span><span class="hm hm4"></span><span>more</span></div>
+    </div>
+  </section>
 
-  <!-- keep-awake fallback：舊 iOS 無 wakeLock 時，播放此極小靜音循環影片維持螢幕不熄（需點一下畫面啟動）-->
+  <!-- ===== 額度警示 ===== -->
+  <section class="view" id="view-alerts">
+    <div class="panel-card">
+      <div class="view-title" data-i18n="alerts.title">額度警示</div>
+      <div id="alerts-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== 設定 ===== -->
+  <section class="view" id="view-settings">
+    <div class="panel-card">
+      <div class="view-title" data-i18n="settings.title">設定</div>
+
+      <div class="set-group">
+        <h3 data-i18n="settings.lang">語言</h3>
+        <select id="set-lang"><option value="tw">繁體中文</option><option value="en">English</option></select>
+      </div>
+
+      <div class="set-group">
+        <h3 data-i18n="settings.theme">主題</h3>
+        <select id="set-theme">
+          <option value="auto" data-i18n="settings.theme.auto">跟隨系統</option>
+          <option value="light" data-i18n="settings.theme.light">淺色</option>
+          <option value="dark" data-i18n="settings.theme.dark">深色</option>
+        </select>
+      </div>
+
+      <div class="set-group">
+        <h3 data-i18n="settings.freq">更新頻率（秒）</h3>
+        <input type="number" id="set-freq" min="2" max="120" step="1">
+      </div>
+
+      <div class="set-group">
+        <h3 data-i18n="settings.providers">顯示的工具</h3>
+        <label class="toggle-row"><input type="checkbox" id="vis-claude"> Claude Code</label>
+        <label class="toggle-row"><input type="checkbox" id="vis-codex"> Codex</label>
+      </div>
+
+      <div class="set-group">
+        <label class="toggle-row"><input type="checkbox" id="awake-toggle" checked> <span data-i18n="settings.wake">🔆 螢幕恆亮</span></label>
+        <div id="wake-status" class="wake-status">—</div>
+      </div>
+
+      <div class="set-group">
+        <h3 data-i18n="settings.budgets">花費預算與警示閾值</h3>
+        <div class="budget-row" data-provider="claude">
+          <span style="font-size:13px;width:90px">Claude Code</span>
+          <label class="field"><span data-i18n="settings.budget.usd">月預算 (USD)</span><input type="number" id="budget-claude" min="0" step="1"></label>
+          <label class="field"><span data-i18n="settings.budget.threshold">警示閾值 (%)</span><input type="number" id="th-claude" min="1" max="100" step="1"></label>
+        </div>
+        <div class="budget-row" data-provider="codex">
+          <span style="font-size:13px;width:90px">Codex</span>
+          <label class="field"><span data-i18n="settings.budget.usd">月預算 (USD)</span><input type="number" id="budget-codex" min="0" step="1"></label>
+          <label class="field"><span data-i18n="settings.budget.threshold">警示閾值 (%)</span><input type="number" id="th-codex" min="1" max="100" step="1"></label>
+        </div>
+      </div>
+
+      <div class="set-group">
+        <h3 data-i18n="settings.pets.claude">Claude Code 寵物</h3>
+        <div class="thumbs" id="thumbs-claude"></div>
+        <h3 data-i18n="settings.pets.codex" style="margin-top:10px">Codex 寵物</h3>
+        <div class="thumbs" id="thumbs-codex"></div>
+      </div>
+
+      <div><span class="saved-note" id="saved-note" data-i18n="settings.saved">已儲存 ✓</span></div>
+    </div>
+  </section>
+
   <video id="nosleep" muted loop playsinline webkit-playsinline preload="auto"
     style="position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;pointer-events:none;">
     <source src="/keepawake.mp4?v=2" type="video/mp4">
   </video>
 
-  <footer id="footer">AI Status Dashboard · 每 5 秒更新運作狀態，額度/花費每 60 秒更新</footer>
+  <footer id="footer" data-i18n="footer"></footer>
 
+  <script src="/vendor/chart.umd.min.js"></script>
+  <script src="/i18n.js"></script>
   <script>
     "use strict";
-    var POLL_MS = 5000;
-    // sprite 動畫 row：idle=第0列、working=第2列（run）。格高 208px。
-    var PET_ROWS = { idle: 0, working: 2, exhausted: 0 };
-    var WIN_META = { session: "5 小時", weekly: "本週" };
-    var STATUS_TEXT = { idle: "閒置", working: "工作中", exhausted: "額度用完（睡著）" };
-    var RING_C = 2 * Math.PI * 42; // r=42
+    var t = window.I18N.t;
 
-    // per-column 快取：資料/狀態未變就不動 DOM，消除每 5s 重建造成的閃爍
-    var lastSig = { claude: null, codex: null };      // JSON.stringify({windows,cost})
+    // ===== 設定（先給預設，開機時由 /api/settings 覆蓋）=====
+    var SETTINGS = {
+      pollIntervalMs: 5000, lang: "tw", theme: "auto", keepAwake: true,
+      providerVisibility: { claude: true, codex: true },
+      budgets: [{ provider: "claude", budgetUSD: null, thresholdPercent: 85 },
+                { provider: "codex", budgetUSD: null, thresholdPercent: 85 }],
+    };
+    function thresholdFor(id) {
+      var b = (SETTINGS.budgets || []).filter(function (x) { return x.provider === id; })[0];
+      return (b && b.thresholdPercent != null) ? b.thresholdPercent : 85;
+    }
+
+    var PET_ROWS = { idle: 0, working: 2, exhausted: 0 };
+    var STATUS_TEXT = function (a) { return t("status." + a); };
+    var WIN_LABEL = function (kind) { return kind === "session" ? t("ring.session") : kind === "weekly" ? t("ring.weekly") : kind; };
+    var RING_C = 2 * Math.PI * 42;
+
+    var lastSig = { claude: null, codex: null };
     var lastActivity = { claude: null, codex: null };
     var lastPetId = { claude: null, codex: null };
-    var petConfig = { claude: null, codex: null }; // 目前選擇（由 /api/status 同步）
+    var petConfig = { claude: null, codex: null };
 
-    function fmtUpdated(iso) {
-      if (!iso) return "—";
-      var diff = Date.now() - new Date(iso).getTime();
-      if (isNaN(diff)) return "—";
-      var min = Math.floor(diff / 60000);
-      if (min <= 0) return "剛剛";
-      if (min < 60) return min + " 分鐘前";
-      var hr = Math.floor(min / 60);
-      return hr + " 小時前";
-    }
     function fmtUSD(v) { return (v == null) ? "—" : "$" + Number(v).toFixed(2); }
     function fmtReset(iso) {
       if (!iso) return "";
       var d = new Date(iso); if (isNaN(d.getTime())) return "";
-      var now = Date.now(); var diff = d.getTime() - now;
-      if (diff <= 0) return "已重置";
+      var diff = d.getTime() - Date.now();
+      if (diff <= 0) return "";
       var h = Math.floor(diff / 3600000);
-      if (h >= 24) return "重置 " + Math.floor(h / 24) + " 天後";
-      if (h >= 1) return "重置 " + h + " 小時後";
-      return "重置 " + Math.max(1, Math.floor(diff / 60000)) + " 分後";
+      if (h >= 24) return "⟳ " + Math.floor(h / 24) + "d";
+      if (h >= 1) return "⟳ " + h + "h";
+      return "⟳ " + Math.max(1, Math.floor(diff / 60000)) + "m";
     }
 
     function ringSVG(win) {
       var used = (win && win.usedPercent != null) ? Math.max(0, Math.min(100, win.usedPercent)) : null;
       var exhausted = win && win.remainingPercent != null && win.remainingPercent <= 0;
-      var label = WIN_META[win && win.kind] || (win && win.kind) || "";
+      var label = WIN_LABEL(win && win.kind) || "";
       if (used == null) {
         return '<div class="ring-wrap"><svg class="ring" viewBox="0 0 100 100">' +
           '<circle class="ring-bg" cx="50" cy="50" r="42"></circle>' +
-          '<text class="ring-na" x="50" y="54" text-anchor="middle">無資料</text></svg>' +
+          '<text class="ring-na" x="50" y="54" text-anchor="middle">' + t("ring.na") + '</text></svg>' +
           '<div class="ring-label">' + label + '</div><div class="ring-reset"></div></div>';
       }
       var dash = (used / 100 * RING_C).toFixed(1) + " " + RING_C.toFixed(1);
@@ -235,214 +402,449 @@
         '<div class="ring-label">' + label + '</div>' +
         '<div class="ring-reset">' + fmtReset(win.resetAt) + '</div></div>';
     }
-
     function renderRings(container, windows) {
-      // 固定順序：先 session（5hr）再 weekly；缺的顯示「無資料」
       var byKind = {};
       (windows || []).forEach(function (w) { if (w && w.kind) byKind[w.kind] = w; });
-      var order = ["session", "weekly"];
-      var html = order.map(function (k) {
+      var html = ["session", "weekly"].map(function (k) {
         return ringSVG(byKind[k] || { kind: k, usedPercent: null });
       }).join("");
       container.innerHTML = html;
     }
-
     function renderCost(container, cost) {
       cost = cost || {};
       container.innerHTML =
-        '<div class="item"><div class="num">' + fmtUSD(cost.todayUSD) + '</div><div class="cap">今日</div></div>' +
-        '<div class="item"><div class="num">' + fmtUSD(cost.last30DaysUSD) + '</div><div class="cap">近 30 天</div></div>';
+        '<div class="item"><div class="num">' + fmtUSD(cost.todayUSD) + '</div><div class="cap">' + t("cost.today") + '</div></div>' +
+        '<div class="item"><div class="num">' + fmtUSD(cost.last30DaysUSD) + '</div><div class="cap">' + t("cost.last30") + '</div></div>';
     }
 
-    // 只在 activity 或選定 petId 改變時才動寵物 DOM，避免動畫重啟與重繪
+    // ── 寵物 sprite 動畫（沿用既有邏輯）──
+    var frameCache = {}, kfStyle = null, kfSet = {};
+    function ensureKf(n) {
+      if (!kfStyle) { kfStyle = document.createElement("style"); document.head.appendChild(kfStyle); }
+      if (kfSet[n]) return;
+      try { kfStyle.sheet.insertRule("@keyframes petf_" + n + "{from{background-position-x:0}to{background-position-x:" + (-(n * 192)) + "px}}", kfStyle.sheet.cssRules.length); } catch (e) {}
+      kfSet[n] = true;
+    }
+    function detectFrames(petId, cb) {
+      if (frameCache[petId]) { cb(frameCache[petId]); return; }
+      var img = new Image();
+      img.onload = function () {
+        var res = { idle: 1, working: 8 };
+        try {
+          var CW = 192, CH = 208, COLS = 8;
+          var cv = document.createElement("canvas");
+          cv.width = img.naturalWidth || 1536; cv.height = img.naturalHeight || 1872;
+          var ctx = cv.getContext("2d"); ctx.drawImage(img, 0, 0);
+          var rowFrames = function (row) {
+            var y = row * CH, last = 0;
+            for (var c = 0; c < COLS; c++) {
+              var d = ctx.getImageData(c * CW, y, CW, CH).data, op = false;
+              for (var i = 3; i < d.length; i += 32) { if (d[i] > 16) { op = true; break; } }
+              if (op) last = c + 1;
+            }
+            return Math.max(1, last);
+          };
+          res = { idle: rowFrames(PET_ROWS.idle), working: rowFrames(PET_ROWS.working) };
+        } catch (e) {}
+        frameCache[petId] = res; cb(res);
+      };
+      img.onerror = function () { var r = { idle: 1, working: 8 }; frameCache[petId] = r; cb(r); };
+      img.src = "/pets/library/" + petId + "/spritesheet.webp";
+    }
+    function applyAnim(pet, activity, frames) {
+      var row = PET_ROWS[activity] != null ? PET_ROWS[activity] : 0;
+      pet.style.backgroundPositionY = (-(row * 208)) + "px";
+      pet.classList.toggle("exhausted", activity === "exhausted");
+      if (activity === "working") {
+        var n = frames.working; ensureKf(n);
+        pet.style.animation = "petf_" + n + " " + Math.max(0.4, n * 0.11).toFixed(2) + "s steps(" + n + ") infinite";
+      } else if (activity === "exhausted") {
+        pet.style.animation = "none"; pet.style.backgroundPositionX = "0";
+      } else {
+        var m = frames.idle;
+        if (m > 1) { ensureKf(m); pet.style.animation = "petf_" + m + " " + Math.max(0.8, m * 0.22).toFixed(2) + "s steps(" + m + ") infinite"; }
+        else { pet.style.animation = "petbreathe 3s ease-in-out infinite"; pet.style.backgroundPositionX = "0"; }
+      }
+    }
     function setPet(id, activity, petId) {
       var pet = document.getElementById("pet-" + id);
       var stage = document.getElementById("stage-" + id);
+      if (!pet || !stage) return;
+      var petChanged = false;
       if (petId && petId !== lastPetId[id]) {
         pet.style.backgroundImage = "url(/pets/library/" + petId + "/spritesheet.webp)";
-        lastPetId[id] = petId;
+        lastPetId[id] = petId; petChanged = true;
       }
-      if (activity !== lastActivity[id]) {
-        var row = PET_ROWS[activity] != null ? PET_ROWS[activity] : 0;
-        pet.style.backgroundPositionY = (-(row * 208)) + "px";
-        pet.className = "pet " + (activity === "working" ? "working" : activity === "exhausted" ? "exhausted" : "idle");
-        if (activity === "exhausted") stage.classList.add("sleeping");
-        else stage.classList.remove("sleeping");
+      var effPet = petId || lastPetId[id];
+      if (activity !== lastActivity[id] || petChanged) {
+        if (activity === "exhausted") stage.classList.add("sleeping"); else stage.classList.remove("sleeping");
         lastActivity[id] = activity;
+        if (effPet) detectFrames(effPet, function (frames) { applyAnim(pet, activity, frames); });
+        else applyAnim(pet, activity, { idle: 1, working: 8 });
       }
     }
 
     function renderProvider(id, p, petId) {
       var activity = (p && p.activity) || "idle";
       setPet(id, activity, petId);
-      // 額度/花費 60s 才變：簽章未變就跳過 SVG 重建（消除每 5s 閃爍）
-      var sig = JSON.stringify({
-        w: p && p.windows,
-        c: p && p.cost,
-        missing: p && p.missing,
-        err: p && p.error && p.error.message,
-      });
+      var sig = JSON.stringify({ w: p && p.windows, c: p && p.cost, missing: p && p.missing, err: p && p.error });
       if (sig !== lastSig[id]) {
         renderRings(document.getElementById("rings-" + id), p && p.windows);
         renderCost(document.getElementById("cost-" + id), p && p.cost);
         var errEl = document.getElementById("err-" + id);
-        if (p && p.error && p.error.message) errEl.textContent = "⚠ " + p.error.message;
-        else if (p && p.missing) errEl.textContent = "⚠ 此 provider 未在 CodexBar 啟用或無回應";
+        var hasWindows = p && p.windows && p.windows.length;
+        if (p && p.error && !hasWindows) errEl.textContent = "⚠ " + p.error;
+        else if (p && p.missing && !hasWindows) errEl.textContent = "⚠ —";
         else errEl.textContent = "";
         lastSig[id] = sig;
       }
-      // 狀態文字每次更新（便宜、無 transition，不閃）
       var st = document.getElementById("status-" + id);
       st.className = "status " + activity;
-      st.innerHTML = '<span class="dot"></span>' + (STATUS_TEXT[activity] || "—");
+      st.innerHTML = '<span class="dot"></span>' + STATUS_TEXT(activity);
     }
 
+    // ===== 額度警示 =====
+    function providerLabel(id) { return id === "claude" ? "Claude Code" : "Codex"; }
+    function checkAlerts(providers) {
+      var alerts = [];
+      ["claude", "codex"].forEach(function (id) {
+        var p = providers[id]; if (!p || !p.windows) return;
+        var weekly = p.windows.filter(function (w) { return w.kind === "weekly"; })[0];
+        var th = thresholdFor(id);
+        if (weekly && weekly.usedPercent != null && weekly.usedPercent >= th) {
+          alerts.push({ id: id, pct: weekly.usedPercent, resetAt: weekly.resetAt, th: th });
+        }
+      });
+      alerts.forEach(maybeNotify);
+      var b = document.getElementById("banner-alert");
+      if (alerts.length) {
+        b.textContent = "🔔 " + alerts.map(function (a) { return providerLabel(a.id) + " " + a.pct + "%"; }).join(" · ");
+        b.classList.add("show");
+      } else { b.classList.remove("show"); }
+      renderAlertsView(alerts);
+      return alerts;
+    }
+    function maybeNotify(a) {
+      var key = "alerted:" + a.id + ":" + (a.resetAt || "");
+      var already = false;
+      try { already = !!localStorage.getItem(key); } catch (e) {}
+      if (already) return;
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification(t("alerts.near"), { body: providerLabel(a.id) + " " + a.pct + "% (≥" + a.th + "%)" });
+          localStorage.setItem(key, "1");
+        } catch (e) {}
+      }
+      // 非安全來源/未授權：由 banner-alert 呈現（不寫 localStorage，維持橫幅可見）
+    }
+    function renderAlertsView(alerts) {
+      var box = document.getElementById("alerts-list"); if (!box) return;
+      if (!alerts || !alerts.length) { box.innerHTML = '<div class="empty" style="display:block">' + t("alerts.none") + '</div>'; return; }
+      box.innerHTML = alerts.map(function (a) {
+        return '<div class="toggle-row">🔔 <b>' + providerLabel(a.id) + '</b> — ' + a.pct + '% (≥' + a.th + '%)</div>';
+      }).join("");
+    }
+
+    // ===== /api/status 輪詢（route-aware）=====
     function render(s) {
-      document.getElementById("banner-stale").classList.toggle("show", !!s.stale && !s.loading);
+      var loading = !!s.loading;
+      document.getElementById("banner-stale").classList.toggle("show", !!s.stale && !loading && !s.lastError);
       document.getElementById("banner-format").classList.toggle("show", !!s.formatError);
-      var upd = document.getElementById("updated");
-      if (upd) upd.textContent = s.loading ? "等待 CodexBar…" : "更新於 " + fmtUpdated(s.updatedAt);
+      var noTok = s.lastError && /not found|ENOENT|not installed/i.test(s.lastError);
+      document.getElementById("banner-notokscale").classList.toggle("show", !!noTok);
       var provs = s.providers || {};
       petConfig = s.petConfig || petConfig;
+      applyProviderVisibility();
       renderProvider("claude", provs.claude, petConfig.claude);
       renderProvider("codex", provs.codex, petConfig.codex);
+      checkAlerts(provs);
     }
-
     async function tick() {
       try {
         var r = await fetch("/api/status", { cache: "no-store" });
-        var s = await r.json();
-        render(s);
-      } catch (e) {
-        var upd = document.getElementById("updated");
-        if (upd) upd.textContent = "無法連上 dashboard server";
+        render(await r.json());
+      } catch (e) { /* server 暫時無回應，維持畫面 */ }
+    }
+    var pollTimer = null;
+    function startPolling() { if (pollTimer) return; tick(); pollTimer = setInterval(tick, SETTINGS.pollIntervalMs); }
+    function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+    function restartPolling() { stopPolling(); startPolling(); }
+
+    // ===== 報表 / 圖表 =====
+    var charts = {};
+    function destroyChart(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
+    async function fetchReport(url) {
+      try { return await (await fetch(url, { cache: "no-store" })).json(); }
+      catch (e) { return { ok: false, error: String(e), data: null }; }
+    }
+    function showEmpty(emptyId, canvasId, on) {
+      var e = document.getElementById(emptyId), c = document.getElementById(canvasId);
+      if (e) e.style.display = on ? "block" : "none";
+      if (c) c.style.display = on ? "none" : "block";
+    }
+    var PIE_COLORS = ["#d97757", "#10a37f", "#6366f1", "#f59e0b", "#ec4899", "#14b8a6", "#8b5cf6", "#ef4444", "#84cc16", "#0ea5e9"];
+
+    // 用量報表：依期間（週/月/自訂）畫「逐日、分工具」的堆疊長條
+    async function renderUsage(period, since, until) {
+      var url;
+      if (period === "custom") {
+        if (!since || !until) { showEmpty("usage-empty", "chart-usage", true); return; }
+        url = "/api/usage/custom?since=" + since + "&until=" + until;
+      } else {
+        url = "/api/usage/daily?range=" + (period === "month" ? "month" : "week");
+      }
+      var res = await fetchReport(url);
+      destroyChart("usage");
+      var pts = (res && res.ok && res.data && res.data.points) ? res.data.points : [];
+      if (!pts.length) { showEmpty("usage-empty", "chart-usage", true); return; }
+      showEmpty("usage-empty", "chart-usage", false);
+      var set = {};
+      pts.forEach(function (p) { Object.keys(p.byClient || {}).forEach(function (c) { set[c] = 1; }); });
+      var clients = Object.keys(set);
+      if (!clients.length) clients = ["cost"]; // 保險：無逐工具明細時退回總花費
+      var datasets = clients.map(function (c, i) {
+        var color = PIE_COLORS[i % PIE_COLORS.length];
+        return {
+          label: c === "cost" ? t("chart.cost") : c,
+          data: pts.map(function (p) { return Number(((c === "cost" ? p.cost : (p.byClient || {})[c]) || 0).toFixed(4)); }),
+          borderColor: color,
+          backgroundColor: color + "66",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          borderWidth: 1.5,
+        };
+      });
+      charts.usage = new Chart(document.getElementById("chart-usage").getContext("2d"), {
+        type: "line",
+        data: { labels: pts.map(function (p) { return p.date; }), datasets: datasets },
+        options: { responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: "bottom" } },
+          scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } },
+      });
+    }
+    function renderUsageFromControls() {
+      var period = document.getElementById("usage-period").value || "week";
+      var custom = period === "custom";
+      document.getElementById("usage-since-wrap").style.display = custom ? "flex" : "none";
+      document.getElementById("usage-until-wrap").style.display = custom ? "flex" : "none";
+      document.getElementById("usage-go").style.display = custom ? "inline" : "none";
+      var hint = document.getElementById("usage-hint"); hint.textContent = "";
+      if (custom) {
+        var since = document.getElementById("usage-since").value, until = document.getElementById("usage-until").value;
+        var re = /^\d{4}-\d{2}-\d{2}$/;
+        if (!since || !until) return; // 等使用者選日期
+        if (!re.test(since) || !re.test(until) || since > until) { hint.textContent = t("custom.invalid"); return; }
+        renderUsage("custom", since, until);
+      } else {
+        renderUsage(period);
       }
     }
 
-    // ===== 設定面板：換寵物 =====
+    // 工具佔比：可依工具(client)或模型(model)分組
+    async function renderPieChart(groupBy) {
+      groupBy = groupBy || "client";
+      var res = await fetchReport("/api/usage/models");
+      destroyChart("pie");
+      var entries = (res && res.ok && res.data && res.data.entries) ? res.data.entries : [];
+      var agg = {};
+      entries.forEach(function (e) {
+        var key = groupBy === "model" ? (e.model || e.client) : e.client;
+        agg[key] = (agg[key] || 0) + (e.cost || 0);
+      });
+      var labels = Object.keys(agg);
+      if (!labels.length) { showEmpty("pie-empty", "chart-pie", true); return; }
+      showEmpty("pie-empty", "chart-pie", false);
+      charts.pie = new Chart(document.getElementById("chart-pie").getContext("2d"), {
+        type: "doughnut",
+        data: { labels: labels, datasets: [{ data: labels.map(function (l) { return Number(agg[l].toFixed(2)); }),
+          backgroundColor: labels.map(function (_, i) { return PIE_COLORS[i % PIE_COLORS.length]; }) }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } },
+      });
+    }
+    function isoD(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+    async function renderHeatmap() {
+      var res = await fetchReport("/api/usage/graph?range=year");
+      var grid = document.getElementById("heatmap-grid");
+      var pts = (res && res.ok && res.data && res.data.points) ? res.data.points : [];
+      if (!pts.length) { grid.innerHTML = ""; document.getElementById("heatmap-empty").style.display = "block"; return; }
+      document.getElementById("heatmap-empty").style.display = "none";
+      var map = {}; pts.forEach(function (p) { map[p.date] = p.intensity; });
+      var dates = pts.map(function (p) { return p.date; }).sort();
+      var start = new Date(dates[0] + "T00:00:00"), end = new Date(dates[dates.length - 1] + "T00:00:00");
+      start.setDate(start.getDate() - start.getDay()); // 對齊到週日
+      var html = "";
+      for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        var key = isoD(d), lvl = map[key] || 0;
+        html += '<div class="hm' + (lvl ? " hm" + lvl : "") + '" title="' + key + (lvl ? " · L" + lvl : "") + '"></div>';
+      }
+      grid.innerHTML = html;
+    }
+    // ===== Router =====
+    var ROUTES = {
+      "#/": "view-launcher", "": "view-launcher",
+      "#/today": "view-today", "#/usage": "view-usage",
+      "#/pie": "view-pie", "#/heatmap": "view-heatmap",
+      "#/alerts": "view-alerts", "#/settings": "view-settings",
+    };
+    function route() {
+      var hash = location.hash || "#/";
+      var viewId = ROUTES[hash] || "view-launcher";
+      Array.prototype.forEach.call(document.querySelectorAll(".view"), function (v) {
+        v.classList.toggle("active", v.id === viewId);
+      });
+      document.getElementById("back").style.display = (viewId === "view-launcher") ? "none" : "inline";
+
+      // route-aware 輪詢：只有 launcher/today 跑 5s tick
+      if (viewId === "view-launcher" || viewId === "view-today") startPolling(); else stopPolling();
+
+      // 進入報表視圖時抓一次資料
+      if (viewId === "view-usage") renderUsageFromControls();
+      else if (viewId === "view-pie") renderPieChart(document.getElementById("pie-by").value);
+      else if (viewId === "view-heatmap") renderHeatmap();
+      else if (viewId === "view-alerts") { if (!pollTimer) tick(); } // 一次性取得目前警示
+      else if (viewId === "view-settings") loadPets();
+    }
+    window.addEventListener("hashchange", route);
+
+    // ===== 設定頁 =====
+    var savedTimer = null;
+    function flashSaved() {
+      var n = document.getElementById("saved-note"); if (!n) return;
+      n.classList.add("show"); clearTimeout(savedTimer);
+      savedTimer = setTimeout(function () { n.classList.remove("show"); }, 1200);
+    }
+    async function saveSettings(partial) {
+      Object.assign(SETTINGS, partial);
+      try {
+        await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(partial) });
+        flashSaved();
+      } catch (e) {}
+    }
+    function applyTheme(theme) {
+      if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
+      else document.documentElement.removeAttribute("data-theme");
+    }
+    function applyProviderVisibility() {
+      var vis = SETTINGS.providerVisibility || { claude: true, codex: true };
+      var cc = document.getElementById("card-claude"), cx = document.getElementById("card-codex");
+      if (cc) cc.classList.toggle("hidden", vis.claude === false);
+      if (cx) cx.classList.toggle("hidden", vis.codex === false);
+    }
+    function budget(id) { return (SETTINGS.budgets || []).filter(function (b) { return b.provider === id; })[0] || { provider: id, budgetUSD: null, thresholdPercent: 85 }; }
+    function setBudget(id, patch) {
+      var arr = (SETTINGS.budgets || []).map(function (b) { return b.provider === id ? Object.assign({}, b, patch) : b; });
+      if (!arr.some(function (b) { return b.provider === id; })) arr.push(Object.assign({ provider: id, budgetUSD: null, thresholdPercent: 85 }, patch));
+      saveSettings({ budgets: arr });
+    }
+    function populateSettingsForm() {
+      document.getElementById("set-lang").value = SETTINGS.lang || "tw";
+      document.getElementById("set-theme").value = SETTINGS.theme || "auto";
+      document.getElementById("set-freq").value = Math.round((SETTINGS.pollIntervalMs || 5000) / 1000);
+      document.getElementById("vis-claude").checked = (SETTINGS.providerVisibility || {}).claude !== false;
+      document.getElementById("vis-codex").checked = (SETTINGS.providerVisibility || {}).codex !== false;
+      document.getElementById("awake-toggle").checked = SETTINGS.keepAwake !== false;
+      var bc = budget("claude"), bx = budget("codex");
+      document.getElementById("budget-claude").value = bc.budgetUSD != null ? bc.budgetUSD : "";
+      document.getElementById("th-claude").value = bc.thresholdPercent != null ? bc.thresholdPercent : 85;
+      document.getElementById("budget-codex").value = bx.budgetUSD != null ? bx.budgetUSD : "";
+      document.getElementById("th-codex").value = bx.thresholdPercent != null ? bx.thresholdPercent : 85;
+    }
+    function wireSettings() {
+      document.getElementById("set-lang").addEventListener("change", function (e) {
+        window.I18N.setLang(e.target.value); saveSettings({ lang: e.target.value });
+      });
+      document.getElementById("set-theme").addEventListener("change", function (e) {
+        applyTheme(e.target.value); saveSettings({ theme: e.target.value });
+      });
+      document.getElementById("set-freq").addEventListener("change", function (e) {
+        var s = Math.max(2, Math.min(120, Number(e.target.value) || 5));
+        saveSettings({ pollIntervalMs: s * 1000 }); restartPolling();
+      });
+      document.getElementById("vis-claude").addEventListener("change", function (e) {
+        var v = Object.assign({}, SETTINGS.providerVisibility, { claude: e.target.checked });
+        saveSettings({ providerVisibility: v }); applyProviderVisibility();
+      });
+      document.getElementById("vis-codex").addEventListener("change", function (e) {
+        var v = Object.assign({}, SETTINGS.providerVisibility, { codex: e.target.checked });
+        saveSettings({ providerVisibility: v }); applyProviderVisibility();
+      });
+      document.getElementById("budget-claude").addEventListener("change", function (e) { setBudget("claude", { budgetUSD: e.target.value === "" ? null : Number(e.target.value) }); });
+      document.getElementById("th-claude").addEventListener("change", function (e) { setBudget("claude", { thresholdPercent: Number(e.target.value) || 85 }); });
+      document.getElementById("budget-codex").addEventListener("change", function (e) { setBudget("codex", { budgetUSD: e.target.value === "" ? null : Number(e.target.value) }); });
+      document.getElementById("th-codex").addEventListener("change", function (e) { setBudget("codex", { thresholdPercent: Number(e.target.value) || 85 }); });
+    }
+
+    // ===== 寵物選擇（沿用既有 API）=====
     function petThumb(column, pet, selectedId) {
       var div = document.createElement("div");
       div.className = "pet-thumb" + (pet.id === selectedId ? " selected" : "");
       div.title = pet.displayName;
-      div.innerHTML =
-        '<div class="img" style="background-image:url(/pets/library/' + pet.id + '/spritesheet.webp)"></div>' +
-        '<div class="nm">' + pet.displayName + '</div>';
+      div.innerHTML = '<div class="img" style="background-image:url(/pets/library/' + pet.id + '/spritesheet.webp)"></div><div class="nm">' + pet.displayName + '</div>';
       div.addEventListener("click", function () { selectPet(column, pet.id); });
       return div;
     }
-
     async function loadPets() {
       var pets;
-      try {
-        pets = await (await fetch("/api/pets", { cache: "no-store" })).json();
-      } catch (e) { return; }
+      try { pets = await (await fetch("/api/pets", { cache: "no-store" })).json(); } catch (e) { return; }
       ["claude", "codex"].forEach(function (column) {
-        var box = document.getElementById("thumbs-" + column);
+        var box = document.getElementById("thumbs-" + column); if (!box) return;
         box.innerHTML = "";
         pets.forEach(function (pet) { box.appendChild(petThumb(column, pet, petConfig[column])); });
       });
     }
-
     async function selectPet(column, petId) {
       try {
-        var r = await fetch("/api/select", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ column: column, petId: petId }),
-        });
+        var r = await fetch("/api/select", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ column: column, petId: petId }) });
         if (!r.ok) return;
         var j = await r.json();
         petConfig = j.petConfig || petConfig;
-        // 立即套用該欄寵物，不等下一次 poll
         setPet(column, lastActivity[column] || "idle", petConfig[column]);
-        // 更新面板選取高亮
         var box = document.getElementById("thumbs-" + column);
         Array.prototype.forEach.call(box.children, function (el) { el.classList.remove("selected"); });
         Array.prototype.forEach.call(box.children, function (el) {
-          if (el.title && el.querySelector(".img").style.backgroundImage.indexOf("/" + petId + "/") > -1) el.classList.add("selected");
+          if (el.querySelector(".img").style.backgroundImage.indexOf("/" + petId + "/") > -1) el.classList.add("selected");
         });
-      } catch (e) { /* 失敗不致命 */ }
+      } catch (e) {}
     }
 
-    function openPanel() {
-      document.getElementById("panel").classList.add("show");
-      document.getElementById("panel-backdrop").classList.add("show");
-      loadPets();
-    }
-    function closePanel() {
-      document.getElementById("panel").classList.remove("show");
-      document.getElementById("panel-backdrop").classList.remove("show");
-    }
-    document.getElementById("gear").addEventListener("click", openPanel);
-    document.getElementById("panel-close").addEventListener("click", closePanel);
-    document.getElementById("panel-backdrop").addEventListener("click", closePanel);
-
-    // ===== 螢幕恆亮（Screen Wake Lock）=====
-    var wakeLock = null;
-    var wakeEnabled = true; // 預設開（決議 D4）
-
-    var keepVid = document.getElementById("nosleep");
-    var vidPlaying = false;
+    // ===== 螢幕恆亮（沿用既有邏輯，控制項移至設定頁）=====
+    var wakeLock = null, wakeEnabled = true;
+    var keepVid = document.getElementById("nosleep"), vidPlaying = false;
     if (keepVid) {
-      keepVid.addEventListener("playing", function () { vidPlaying = true; if (!wakeLock) setWakeStatus("影片模式保持中 ✓（螢幕應維持恆亮）"); });
+      keepVid.addEventListener("playing", function () { vidPlaying = true; if (!wakeLock) setWakeStatus("影片模式保持中 ✓"); });
       keepVid.addEventListener("pause", function () { vidPlaying = false; });
     }
-
-    function setWakeStatus(msg) {
-      var el = document.getElementById("wake-status");
-      if (el) el.textContent = "恆亮狀態：" + msg;
-    }
-
-    function tryVideoKeepAwake() {
-      if (!wakeEnabled || !keepVid) return;
-      var p = keepVid.play();
-      if (p && p.catch) p.catch(function () { /* iOS 需使用者手勢，稍後由點擊觸發 */ });
-    }
-    function stopVideoKeepAwake() {
-      if (keepVid) { try { keepVid.pause(); keepVid.currentTime = 0; } catch (e) {} }
-    }
-
+    function setWakeStatus(msg) { var el = document.getElementById("wake-status"); if (el) el.textContent = msg; }
+    function tryVideoKeepAwake() { if (!wakeEnabled || !keepVid) return; var p = keepVid.play(); if (p && p.catch) p.catch(function () {}); }
+    function stopVideoKeepAwake() { if (keepVid) { try { keepVid.pause(); keepVid.currentTime = 0; } catch (e) {} } }
     async function requestWakeLock() {
       if (!wakeEnabled) { setWakeStatus("已關閉"); return; }
-      // 原生 Screen Wake Lock（iOS Safari 16.4+）優先
       if ("wakeLock" in navigator) {
-        if (document.visibilityState !== "visible") { setWakeStatus("頁面非前景，暫不鎖定"); return; }
+        if (document.visibilityState !== "visible") return;
         try {
           wakeLock = await navigator.wakeLock.request("screen");
-          setWakeStatus("已鎖定螢幕 ✓（原生）");
-          wakeLock.addEventListener("release", function () {
-            wakeLock = null;
-            setWakeStatus("鎖被系統釋放，改用影片模式…");
-            tryVideoKeepAwake();
-          });
+          setWakeStatus("已鎖定螢幕 ✓");
+          wakeLock.addEventListener("release", function () { wakeLock = null; tryVideoKeepAwake(); });
           return;
-        } catch (e) { /* 落到影片模式 */ }
+        } catch (e) {}
       }
-      // 無原生 API 或請求失敗：改用影片模式（舊 iOS 唯一可行）
       tryVideoKeepAwake();
       if (!vidPlaying) setWakeStatus("點一下畫面即可啟用恆亮（影片模式）");
     }
-    async function releaseWakeLock() {
-      try { if (wakeLock) await wakeLock.release(); } catch (e) {}
-      wakeLock = null;
-      stopVideoKeepAwake();
-      setWakeStatus("已關閉");
-    }
+    async function releaseWakeLock() { try { if (wakeLock) await wakeLock.release(); } catch (e) {} wakeLock = null; stopVideoKeepAwake(); setWakeStatus("已關閉"); }
     document.getElementById("awake-toggle").addEventListener("change", function (e) {
-      wakeEnabled = e.target.checked;
+      wakeEnabled = e.target.checked; saveSettings({ keepAwake: wakeEnabled });
       if (wakeEnabled) { requestWakeLock(); tryVideoKeepAwake(); } else releaseWakeLock();
     });
-    // 鎖/影片於頁面隱藏時會被系統中止 → 回到可見時重取
     document.addEventListener("visibilitychange", function () {
       if (wakeEnabled && document.visibilityState === "visible") { requestWakeLock(); tryVideoKeepAwake(); }
     });
-    // iOS 需使用者手勢才能播放影片：第一次點/觸控畫面時啟用恆亮
     ["click", "touchend"].forEach(function (ev) {
       document.addEventListener(ev, function () { if (wakeEnabled) { requestWakeLock(); tryVideoKeepAwake(); } }, { passive: true });
     });
-    requestWakeLock();
 
-    // 頁首時鐘 yyyy/mm/dd HH:MM:SS（每秒更新）
+    // 時鐘
     function pad2(n) { return (n < 10 ? "0" : "") + n; }
     function tickClock() {
       var d = new Date();
@@ -450,11 +852,34 @@
         d.getFullYear() + "/" + pad2(d.getMonth() + 1) + "/" + pad2(d.getDate()) + " " +
         pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
     }
-    tickClock();
-    setInterval(tickClock, 1000);
 
-    tick();
-    setInterval(tick, POLL_MS);
+    // ===== 開機 =====
+    async function boot() {
+      // 1) 載入設定並套用
+      try {
+        var s = await (await fetch("/api/settings", { cache: "no-store" })).json();
+        if (s && typeof s === "object") SETTINGS = Object.assign(SETTINGS, s);
+      } catch (e) {}
+      wakeEnabled = SETTINGS.keepAwake !== false;
+      if (SETTINGS.lang) window.I18N.setLang(SETTINGS.lang);
+      applyTheme(SETTINGS.theme);
+      window.I18N.applyI18n();
+      applyProviderVisibility();
+      populateSettingsForm();
+      wireSettings();
+      document.getElementById("usage-period").addEventListener("change", renderUsageFromControls);
+      document.getElementById("usage-go").addEventListener("click", renderUsageFromControls);
+      document.getElementById("pie-by").addEventListener("change", function () { renderPieChart(this.value); });
+
+      // 2) 通知授權（僅安全來源會成功；失敗則走 banner 降級）
+      try { if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); } catch (e) {}
+
+      // 3) 時鐘 + 首次路由（route 內會依視圖決定是否輪詢）
+      tickClock(); setInterval(tickClock, 1000);
+      requestWakeLock();
+      route();
+    }
+    boot();
   </script>
 </body>
 </html>

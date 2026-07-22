@@ -1,8 +1,8 @@
 {
   "name": "ai-status-dashboard",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "本地常駐 web dashboard，讀 CodexBar serve 的 snapshot 顯示 Claude Code / Codex 用量狀態",
+  "description": "本地常駐 web dashboard，讀 tokscale CLI 顯示 Claude Code / Codex 用量狀態",
   "type": "commonjs",
   "engines": {
     "node": ">=18"
