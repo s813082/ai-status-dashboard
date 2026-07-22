@@ -31,3 +31,5 @@ src/public/pets/codex/
 !src/public/pets/library/.gitkeep
 # 由寵物幀裁切的 icon（衍生自第三方素材）
 src/public/apple-touch-icon.png
+.spectra/
+openspec/.vector-search.db*

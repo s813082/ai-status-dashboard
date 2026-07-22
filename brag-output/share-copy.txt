@@ -1,0 +1,2 @@
+把「盯 AI 用量」變成養一隻會工作、會偷懶、會睡著的像素小夥伴 🐥
+AI Status Dashboard：Claude / Codex 的額度、花費、週月報表一頁看完，桌邊 iPhone 當常駐副螢幕。tokscale-powered、跨平台。
