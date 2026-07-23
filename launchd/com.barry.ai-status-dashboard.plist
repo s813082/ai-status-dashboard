@@ -21,10 +21,6 @@
 
     <key>EnvironmentVariables</key>
     <dict>
-        <!-- 待淘汰（v0.3.0 起）：資料源已改為 tokscale CLI，dashboard 不再讀 CODEXBAR_DASHBOARD_TOKEN。
-             保留此鍵僅為向後相容，後續變更將移除。tokscale 需可於 PATH 執行。 -->
-        <key>CODEXBAR_DASHBOARD_TOKEN</key>
-        <string>__REPLACE_WITH_DASHBOARD_TOKEN__</string>
         <key>PORT</key>
         <string>8787</string>
         <!-- v0.3.0 起：資料源為 tokscale CLI。launchd 的 PATH 不含 nvm/homebrew，
