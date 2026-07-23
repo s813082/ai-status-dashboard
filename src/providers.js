@@ -1,6 +1,6 @@
 'use strict';
 
-// Provider 設定中心（取代 codexBarSnapshot.js 內硬編碼的 WANTED_PROVIDERS）。
+// Provider 設定中心（唯一的 provider 清單來源）。
 // 未來新增 provider（如 antigravity）只需在此加一列，collector 與前端皆讀此表。
 //
 // 欄位：

@@ -1,8 +1,7 @@
 'use strict';
 
-// tokscale 快照 collector。介面與 codexBarSnapshot.js 完全相同
-// （init / startPolling / refresh / getSnapshot / normalize / DATA_FILE），
-// 讓 server.js 只需替換 require 目標。
+// tokscale 快照 collector。對外介面：
+// init / startPolling / refresh / getSnapshot / normalize / labelToKind / DATA_FILE。
 //
 // 資料來源（皆經 ./tokscale.js 封裝）：
 //   Claude 額度 → `tokscale usage --json`（provider==="Claude"，label Session/Weekly）
