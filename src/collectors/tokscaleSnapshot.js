@@ -256,5 +256,6 @@ module.exports = {
   refresh,
   getSnapshot,
   normalize,
+  labelToKind,
   DATA_FILE,
 };

@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "add-pet": "bash scripts/add-pet.sh"
+    "add-pet": "bash scripts/add-pet.sh",
+    "test": "node --test test/*.test.js"
   }
 }
