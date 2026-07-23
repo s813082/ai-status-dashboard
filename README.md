@@ -27,6 +27,7 @@
   - [自訂／切換寵物](#自訂切換寵物)
   - [修復 tokscale 抓不到某個 provider](#修復-tokscale-抓不到某個-provider)
   - [讓 iPhone 螢幕恆亮](#讓-iphone-螢幕恆亮)
+  - [矮螢幕／橫向副螢幕自適應](#矮螢幕橫向副螢幕自適應)
   - [在 Windows 上使用](#在-windows-上使用)
 - [參考](#參考)（Reference）
   - [HTTP API](#http-api)
@@ -179,6 +180,18 @@ launchctl list | grep ai-status-dashboard        # 應在清單內
 
 > **原理**：網頁本身無法阻止系統休眠——只有 Screen Wake Lock API 或影片播放能維持不熄；皆不可行時請用系統設定。
 
+### 矮螢幕／橫向副螢幕自適應
+
+把 iPhone 橫放當常駐副螢幕（例如 932×430 這種「很寬但很矮」的可視區）時，**「今日」卡片會自動調整以完整顯示，無需手動操作**：
+
+- **橫向重排**：視窗矮且夠寬（高度 ≤ 520px 且寬度 ≥ 640px）時，每張卡片由上下堆疊改為左右並排（寵物在左、額度環＋花費＋狀態在右），兩張卡片仍並排同畫面，寵物與文字維持原尺寸。
+- **等比縮放保底**：極矮視窗（重排後仍塞不下）才回退到整體等比縮小，確保底部花費永不被裁切。
+- **轉向自動歸位**：旋轉裝置時會把 pinch 縮放重設回預設比例，不必自己雙指縮回。
+
+一般桌機視窗與直向手機不受影響，維持原本直向排版。此行為為純前端 CSS/JS，無需任何設定。
+
+> 轉向歸位與 pinch 相關行為依賴行動瀏覽器的 `visualViewport`／viewport meta 行為，最終手感請於實機（iOS Safari）確認。
+
 ### 在 Windows 上使用
 
 好消息：**tokscale 原生支援 Windows**（不像舊資料源 CodexBar 僅限 macOS/Linux）。理論上：
@@ -256,7 +269,7 @@ tokscale 各 provider 的 metric label 與正規化 `kind` 對映（每欄前端
 
 ```
 ai-status-dashboard/
-├── package.json                  # scripts：start / add-pet；version 0.4.0
+├── package.json                  # scripts：start / add-pet；version 0.5.0
 ├── src/
 │   ├── server.js                   # node:http 進入點（port 8787）；狀態/報表/設定/靜態路由
 │   ├── providers.js                # provider 設定中心（新增 provider 只加一列）
@@ -349,6 +362,18 @@ launchctl bootout gui/$(id -u)/com.barry.ai-status-dashboard          # 停用
 ## Changelog
 
 格式依循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本號採語意化版本。
+
+### [0.5.0] — 2026-07-23
+
+#### Added
+
+- **矮螢幕／橫向副螢幕自適應**：把裝置橫放當低高度副螢幕（如 932×430）時，「今日」卡片自動由上下堆疊改為左右並排（寵物左、額度環＋花費＋狀態右），內容維持原尺寸、兩卡並排、底部花費不被裁切。觸發條件為視窗高度 ≤ 520px 且寬度 ≥ 640px；一般桌機與直向手機不受影響。
+- **等比縮放保底（fit-to-height）**：極矮視窗重排後仍塞不下時，對容器套用 `transform: scale()` 整體縮小保底，確保內容永不裁切。
+- **轉向自動歸位縮放**：`orientationchange` 時把 pinch 縮放重設回預設比例，免手動雙指縮回。
+
+#### Fixed
+
+- 手機 pinch 縮放後轉向時比例卡在錯值：改用版面視窗高度 `document.documentElement.clientHeight`（而非受縮放污染的 `window.innerHeight`）計算縮放，並監聽 `visualViewport` 變動即時重算。
 
 ### [0.4.0] — 2026-07-22
 

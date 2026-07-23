@@ -62,7 +62,7 @@
 
     /* Launcher */
     .launch-title { max-width: 720px; margin: 4px auto 14px; font-size: 15px; font-weight: 650; color: var(--ink); }
-    .tiles { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tiles { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; transform-origin: top center; }
     @media (max-width: 460px) { .tiles { grid-template-columns: 1fr; } }
     .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; text-decoration: none; color: var(--ink); display: block; transition: transform .08s ease; }
     .tile:hover { transform: translateY(-2px); }
@@ -70,7 +70,7 @@
     .tile .t-desc { font-size: 12px; color: var(--muted); margin-top: 4px; }
     .tile .t-ico { font-size: 20px; margin-bottom: 6px; display: block; }
 
-    .grid { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid { max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; transform-origin: top center; }
     @media (max-width: 460px) { .grid { grid-template-columns: 1fr; } }
     .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 14px 18px; text-align: center; }
     .card.hidden { display: none; }
@@ -116,6 +116,33 @@
     .status.working .dot { background: #22a06b; }
     .status.exhausted .dot { background: #d0342c; }
     .prov-err { font-size: 11px; color: var(--err-ink); margin-top: 5px; }
+
+    /* 矮且寬螢幕（副螢幕 landscape）：卡片改橫向重排，立繪左、資料右，避免高度爆版被裁切。
+       立繪維持原尺寸；JS scale-to-fit 自動降為極矮螢幕的 fallback（此時自然高度已縮小，scale=1）。 */
+    @media (max-height: 520px) and (min-width: 640px) {
+      .grid { max-width: 900px; }
+      .card {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+          "title title"
+          "pet   rings"
+          "pet   cost"
+          "pet   note"
+          "pet   status"
+          "pet   err";
+        align-items: center;
+        column-gap: 12px;
+        padding: 12px 16px;
+      }
+      .card h2         { grid-area: title; }
+      .card .pet-stage { grid-area: pet; align-self: center; }
+      .card .rings     { grid-area: rings; margin: 0; }
+      .card .cost      { grid-area: cost; }
+      .card .cost-note { grid-area: note; }
+      .card .status    { grid-area: status; }
+      .card .prov-err  { grid-area: err; }
+    }
     footer { max-width: 720px; margin: 14px auto 0; text-align: center; font-size: 11px; color: var(--muted); }
 
     /* 報表視圖 */
@@ -704,8 +731,77 @@
       else if (viewId === "view-heatmap") renderHeatmap();
       else if (viewId === "view-alerts") { if (!pollTimer) tick(); } // 一次性取得目前警示
       else if (viewId === "view-settings") loadPets();
+
+      scheduleFit(); // 進入 today/launcher 後依高度重算縮放（其他 view 會被清空）
     }
     window.addEventListener("hashchange", route);
+
+    // ===== 矮螢幕等比縮放（fit-to-height）=====
+    // 低高度視窗（如副螢幕 932×430）下卡片內容固定高度會超出可視區、底部被切掉。
+    // 對當前 view 主容器套 transform: scale()，scale = min(1, 可用高度 / 內容自然高度)。
+    // 註：transform 不影響 layout 盒大小，故不會反覆觸發 ResizeObserver，無無限迴圈之虞。
+    function fitClear(el) { if (el && el.style.transform) el.style.transform = ""; }
+    function fitTarget() {
+      var today = document.getElementById("view-today");
+      var launcher = document.getElementById("view-launcher");
+      if (today && today.classList.contains("active")) return today.querySelector(".grid");
+      if (launcher && launcher.classList.contains("active")) return launcher.querySelector(".tiles");
+      return null;
+    }
+    function fitScreen() {
+      var grid = document.querySelector("#view-today .grid");
+      var tiles = document.querySelector("#view-launcher .tiles");
+      var target = fitTarget();
+      if (!target) { fitClear(grid); fitClear(tiles); return; } // 非套用視圖：維持原狀
+      fitClear(target === grid ? tiles : grid);                 // 另一容器殘留縮放先清掉
+      target.style.transform = "";                              // 量測前清空，取未縮放自然高度
+      var natural = target.scrollHeight;
+      if (!natural) return;
+      var pad = parseFloat(getComputedStyle(document.body).paddingBottom) || 16; // 已解析 env(safe-area)
+      // 用版面視窗高度（documentElement.clientHeight），不用 window.innerHeight：
+      // 後者在手機（尤其 iOS Safari）雙指縮放時會回傳被縮放污染的視覺視窗高度，
+      // 導致轉向後 scale 卡在錯值不恢復。clientHeight 為版面視窗，pinch 縮放下穩定。
+      var avail = document.documentElement.clientHeight - target.getBoundingClientRect().top - pad;
+      var scale = Math.min(1, avail / natural);
+      if (scale < 1) target.style.transform = "scale(" + scale.toFixed(4) + ")";
+      // scale >= 1：transform 已清空，正常螢幕與原本畫面完全一致
+    }
+    var fitPending = false;
+    function scheduleFit() {
+      if (fitPending) return;
+      fitPending = true;
+      requestAnimationFrame(function () { fitPending = false; fitScreen(); });
+    }
+    var fitResizeTimer = null;
+    function onFitResize() { clearTimeout(fitResizeTimer); fitResizeTimer = setTimeout(fitScreen, 100); }
+    window.addEventListener("resize", onFitResize);
+    // 轉向時把 pinch 縮放歸位到預設值（初始比例）：暫時加 maximum-scale=1 逼瀏覽器重設縮放，
+    // 下一拍還原 content，讓使用者之後仍可自由縮放。
+    var VP_BASE = "width=device-width, initial-scale=1, viewport-fit=cover";
+    function resetZoom() {
+      var vp = document.querySelector('meta[name="viewport"]');
+      if (!vp) return;
+      vp.setAttribute("content", VP_BASE + ", maximum-scale=1");
+      setTimeout(function () { vp.setAttribute("content", VP_BASE); }, 350);
+    }
+    // 轉向後視窗尺寸更新常有延遲，延遲一拍（雙 rAF）再量一次，並補一次 300ms 保險
+    window.addEventListener("orientationchange", function () {
+      resetZoom();
+      requestAnimationFrame(function () { requestAnimationFrame(fitScreen); });
+      setTimeout(fitScreen, 300);
+    });
+    // pinch 縮放會觸發 visualViewport 變動：重算以清掉殘留縮放、恢復正確比例
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", onFitResize);
+      window.visualViewport.addEventListener("scroll", onFitResize);
+    }
+    if ("ResizeObserver" in window) {
+      var fitObserver = new ResizeObserver(scheduleFit); // 輪詢後環圈/費用 render 撐高時自動重算
+      var fitGrid = document.querySelector("#view-today .grid");
+      var fitTiles = document.querySelector("#view-launcher .tiles");
+      if (fitGrid) fitObserver.observe(fitGrid);
+      if (fitTiles) fitObserver.observe(fitTiles);
+    }
 
     // ===== 設定頁 =====
     var savedTimer = null;
