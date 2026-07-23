@@ -2,7 +2,7 @@
 
 ### Requirement: Per-device usage snapshot upload contract
 
-Each device SHALL periodically produce a normalized usage snapshot and upload it to the shared private data repository. The uploaded file SHALL be named `devices/<deviceId>.json` and SHALL be overwritten in place on each upload to bound commit history growth. The file SHALL contain `deviceId`, `os`, `generatedAt` as a UTC ISO timestamp, `tokscaleVersion`, and a `providers` object matching the normalized snapshot shape consumed by aggregation.
+Each device SHALL periodically produce a normalized usage snapshot and upload it to the shared private data repository. The upload SHALL use a single authenticated GitHub contents API request (HTTP PUT) and MUST NOT require a local git clone, commit, or push. The uploaded file SHALL be named `devices/<deviceId>.json` and SHALL be overwritten in place on each upload to bound commit history growth. The file SHALL contain `deviceId`, `os`, `generatedAt` as a UTC ISO timestamp, `tokscaleVersion`, and a `providers` object matching the normalized snapshot shape consumed by aggregation.
 
 #### Scenario: Device produces a valid snapshot file
 

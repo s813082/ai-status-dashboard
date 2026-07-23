@@ -10,7 +10,7 @@
 - /api/status 對前端輸出的 schema 維持不變，前端 index.html 零改動。
 - 新增 Zeabur 容器化部署設定與環境變數化組態。
 - 新增 dashboard 存取控制：上雲後為公開 URL 會外露花費金額，需以 DASHBOARD_TOKEN 做 token/Basic Auth 前置驗證。
-- 定義每台裝置的上傳契約：定時產出正規化 snapshot、包上裝置中繼資料、覆寫同檔 push 到資料 repo。
+- 定義每台裝置的上傳契約：定時產出正規化 snapshot、包上裝置中繼資料、以 GitHub contents API 單一 PUT 覆寫同檔到資料 repo（不走 git clone/commit/push）。
 
 ## Non-Goals (optional)
 
@@ -26,7 +26,7 @@
 
 - `remote-usage-aggregation`: dashboard 從 GitHub private repo 讀取多台裝置用量 JSON 並聚合（花費相加、額度取最新裝置），以 DATA_SOURCE 切換 local／github，維持 /api/status schema 不變。
 - `cloud-deployment`: 容器化部署到 Zeabur 的組態與環境變數化設定，並提供以 DASHBOARD_TOKEN 為基礎的存取控制。
-- `device-usage-upload`: 每台裝置定時產出正規化用量 snapshot、附裝置中繼資料並覆寫同檔 push 到資料 repo 的上傳契約。
+- `device-usage-upload`: 每台裝置定時產出正規化用量 snapshot、附裝置中繼資料並以 GitHub contents API 單一 PUT 覆寫同檔到資料 repo 的上傳契約。
 
 ### Modified Capabilities
 

@@ -18,9 +18,9 @@
 ## 4. 裝置上傳端契約（device-usage-upload，實作前需定位 hermes-agent）
 
 - [ ] 4.1 定位 hermes-agent 程式碼實際位置與結構並回報 Supervisor，取得補充後才進入實作。驗證：回報一份 hermes-agent 位置/結構說明，確認上傳步驟可掛入既有流程。
-- [ ] 4.2 實作 Per-device usage snapshot upload contract 與 Upload credential isolation：本機跑 tokscale 產出正規化 snapshot（複用 tokscaleSnapshot 正規化邏輯），包上 deviceId/os/generatedAt(UTC)/tokscaleVersion，覆寫 devices/<deviceId>.json 並 push；憑證存本機憑證檔不進 code。驗證：實跑一次，資料 repo 出現對應裝置檔且內容合法、無任何憑證。
+- [ ] 4.2 實作 Per-device usage snapshot upload contract 與 Upload credential isolation：本機跑 tokscale 產出正規化 snapshot（複用 tokscaleSnapshot 正規化邏輯），包上 deviceId/os/generatedAt(UTC)/tokscaleVersion，以 GitHub contents API 單一 PUT 覆寫 devices/<deviceId>.json（不走 git clone/commit/push）；憑證存本機憑證檔不進 code。驗證：實跑一次，資料 repo 出現對應裝置檔且內容合法、無任何憑證。
 - [ ] 4.3 完成 Scheduled execution per platform：macOS 用 launchd（比照現有 plist 風格）、Windows 用 Task Scheduler，間隔 5–15 分鐘。驗證：排程註冊後於下一週期自動更新裝置檔。
-- [ ] 4.4 撰寫「新增裝置 SOP」文件（裝 tokscale → 設 deviceId → 設 PAT → 註冊排程 → 首次 push）。驗證：依文件在一台新裝置走一遍能成功首次 push。
+- [ ] 4.4 撰寫「新增裝置 SOP」文件（裝 tokscale → 設 deviceId → 設 PAT → 註冊排程 → 首次上傳）。驗證：依文件在一台新裝置走一遍能成功首次以 API PUT 上傳裝置檔。
 
 ## 5. 端到端驗收
 
