@@ -119,8 +119,6 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.barry.ai-status-dash
 launchctl list | grep ai-status-dashboard        # 應在清單內
 ```
 
-> `com.barry.codexbar-serve.plist` 為舊資料源（CodexBar）遺留，**v0.3.0 起已不需要**，可略過或 `launchctl bootout` 停用。
-
 ### 4. 用 iPhone 連線
 
 - 首選 Bonjour/mDNS：iPhone Safari 開 **`http://YOUR-MAC.local:8787`**（主機名以 `scutil --get LocalHostName` 查）。
@@ -277,8 +275,7 @@ ai-status-dashboard/
 │   │   ├── tokscale.js               # tokscale CLI 低階封裝（execFile、ENOENT、版本偵測）
 │   │   ├── tokscaleSnapshot.js       # 60s 額度/花費快照：重試 + carry-forward + 落地
 │   │   ├── tokscaleReports.js        # 報表資料層（TTL 快取 + in-flight 串行化）
-│   │   ├── activity.js               # 純 mtime 的 working/idle/exhausted 判斷
-│   │   └── codexBarSnapshot.js       # 【deprecated】舊 CodexBar 資料源，已解除接線
+│   │   └── activity.js               # 純 mtime 的 working/idle/exhausted 判斷
 │   └── public/
 │       ├── index.html              # 多視圖單頁（hash 路由 + inline CSS/JS）
 │       ├── i18n.js                 # tw/en 字串表

@@ -1,5 +1,11 @@
 # AI Status Dashboard — dev-spec
 
+> **⚠️ HISTORICAL — 本文件已過時，僅供早期設計脈絡參考**
+>
+> 本文件描述的是最初以 **CodexBar（`codexbar serve` on port 8080）** 為資料源的設計，且部分敘述（如 activity 用 `ps` + 12 秒窗）與現行實作不符。專案自 v0.3.0 起資料源已改為 **tokscale CLI**，CodexBar 相關程式與 plist 亦已於後續版本移除。
+>
+> **權威規格請以 `openspec/specs/` 為準**（例如資料採集見 `openspec/specs/usage-collector/spec.md`）。本文件不再維護。
+
 Claude Code + Codex 用量儀表板，本地 web dashboard，iPhone 用 Safari 連區網當常駐副螢幕。
 
 ## Context / 為什麼做這個

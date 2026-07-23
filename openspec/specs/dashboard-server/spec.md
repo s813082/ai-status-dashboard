@@ -88,12 +88,10 @@ code:
   - src/public/index.html
   - src/collectors/tokscaleReports.js
   - launchd/com.barry.ai-status-dashboard.plist
-  - src/collectors/codexBarSnapshot.js
   - src/collectors/tokscale.js
   - src/public/vendor/chart.umd.min.js
   - README.md
   - src/providers.js
-  - launchd/com.barry.codexbar-serve.plist
   - src/collectors/tokscaleSnapshot.js
 -->
 
@@ -128,12 +126,10 @@ code:
   - src/public/index.html
   - src/collectors/tokscaleReports.js
   - launchd/com.barry.ai-status-dashboard.plist
-  - src/collectors/codexBarSnapshot.js
   - src/collectors/tokscale.js
   - src/public/vendor/chart.umd.min.js
   - README.md
   - src/providers.js
-  - launchd/com.barry.codexbar-serve.plist
   - src/collectors/tokscaleSnapshot.js
 -->
 
@@ -162,11 +158,9 @@ code:
   - src/public/index.html
   - src/collectors/tokscaleReports.js
   - launchd/com.barry.ai-status-dashboard.plist
-  - src/collectors/codexBarSnapshot.js
   - src/collectors/tokscale.js
   - src/public/vendor/chart.umd.min.js
   - README.md
   - src/providers.js
-  - launchd/com.barry.codexbar-serve.plist
   - src/collectors/tokscaleSnapshot.js
 -->

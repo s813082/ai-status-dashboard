@@ -29,8 +29,6 @@ updated: 2026-07-22
 code:
   - src/public/index.html
   - package.json
-  - src/collectors/codexBarSnapshot.js
-  - launchd/com.barry.codexbar-serve.plist
   - launchd/com.barry.ai-status-dashboard.plist
   - src/collectors/tokscaleSnapshot.js
   - src/collectors/tokscale.js
@@ -103,8 +101,6 @@ updated: 2026-07-22
 code:
   - src/public/index.html
   - package.json
-  - src/collectors/codexBarSnapshot.js
-  - launchd/com.barry.codexbar-serve.plist
   - launchd/com.barry.ai-status-dashboard.plist
   - src/collectors/tokscaleSnapshot.js
   - src/collectors/tokscale.js
@@ -143,8 +139,6 @@ updated: 2026-07-22
 code:
   - src/public/index.html
   - package.json
-  - src/collectors/codexBarSnapshot.js
-  - launchd/com.barry.codexbar-serve.plist
   - launchd/com.barry.ai-status-dashboard.plist
   - src/collectors/tokscaleSnapshot.js
   - src/collectors/tokscale.js
