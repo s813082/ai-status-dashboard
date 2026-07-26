@@ -11,16 +11,17 @@ const path = require('node:path');
 const snapshot = require('./collectors/tokscaleSnapshot.js');
 const activity = require('./collectors/activity.js');
 const reports = require('./collectors/tokscaleReports.js');
+const { DATA_DIR, dataFile } = require('./dataDir.js');
 
 const PORT = Number(process.env.PORT || 8787);
 const HOST = process.env.HOST || '0.0.0.0'; // 綁 0.0.0.0 讓區網 iPhone 連得到
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const REFRESH_MS = 60_000;
 const LIBRARY_DIR = path.join(PUBLIC_DIR, 'pets', 'library');
-const PET_CONFIG_FILE = path.join(__dirname, '..', 'data', 'pet-config.json');
+const PET_CONFIG_FILE = dataFile('pet-config.json');
 const DEFAULT_PET_CONFIG = { claude: 'clawd', codex: 'boba' };
 const VENDOR_DIR = path.join(PUBLIC_DIR, 'vendor');
-const SETTINGS_FILE = path.join(__dirname, '..', 'data', 'settings.json');
+const SETTINGS_FILE = dataFile('settings.json');
 const DEFAULT_SETTINGS = {
   pollIntervalMs: 5000,
   lang: 'tw',

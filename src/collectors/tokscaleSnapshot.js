@@ -15,7 +15,7 @@ const path = require('node:path');
 const tokscale = require('./tokscale.js');
 const PROVIDERS = require('../providers.js');
 
-const DATA_FILE = path.join(__dirname, '..', '..', 'data', 'snapshot.json');
+const DATA_FILE = require('../dataDir.js').dataFile('snapshot.json');
 
 let current = null; // 正規化後最新快照（含 meta）
 
