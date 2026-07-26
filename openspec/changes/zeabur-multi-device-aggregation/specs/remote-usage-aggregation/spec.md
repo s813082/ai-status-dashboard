@@ -41,6 +41,20 @@ The system SHALL aggregate per-device snapshots into a single normalized view. C
 - **WHEN** a device's provider entry has a non-null error
 - **THEN** that device's cost SHALL be excluded from the aggregated total
 
+### Requirement: Activity source follows the selected data source
+
+The activity state served by `/api/status` SHALL be derived from the active data source. In local mode the system SHALL continue to compute activity from local session-log file modification times. In GitHub mode the system MUST NOT read local session-log paths, and SHALL derive activity from the aggregated device snapshots, reporting `working` when any contributing device reports `working`.
+
+#### Scenario: GitHub mode does not read local session logs
+
+- **WHEN** the server serves `/api/status` in GitHub mode
+- **THEN** it MUST NOT inspect local session-log paths and MUST NOT report `idle` merely because those paths are absent
+
+#### Scenario: Any working device makes the aggregate working
+
+- **WHEN** at least one contributing device reports activity `working` for a provider
+- **THEN** the aggregated activity for that provider SHALL be `working`
+
 ### Requirement: Preserve the /api/status output contract
 
 The aggregated output SHALL conform to the existing `/api/status` normalized schema so the frontend requires no changes. The system MAY include an additional per-device breakdown field that does not alter existing fields.
