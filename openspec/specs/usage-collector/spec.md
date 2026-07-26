@@ -111,7 +111,7 @@ code:
 ---
 ### Requirement: tokscale CLI collection resilience
 
-The system SHALL keep the server process alive and the `/api/status` response non-erroring under all tokscale CLI failure modes, degrading to explicit empty or "no data" states rather than crashing or emitting wrong values. All tokscale invocations SHALL pass through a single access wrapper that executes tokscale via `execFile` with a timeout and bounded output buffer, and report-style commands SHALL pass `--no-spinner`.
+The system SHALL keep the server process alive and the `/api/status` response non-erroring under all tokscale CLI failure modes, degrading to explicit empty or "no data" states rather than crashing or emitting wrong values. All tokscale invocations SHALL pass through a single access wrapper that uses `execFile` with a timeout, bounded output buffer, and hidden Windows child-process windows. On macOS, Linux, and Windows `.exe` binaries, the wrapper SHALL execute the configured binary directly with the original argument array. On Windows, configured `.cmd` or `.bat` binaries SHALL execute through `ComSpec` with each binary and argument token safely quoted so token boundaries are preserved. Report-style commands SHALL pass `--no-spinner`.
 
 #### Scenario: tokscale not installed
 
@@ -133,15 +133,46 @@ The system SHALL keep the server process alive and the `/api/status` response no
 - **WHEN** a `tokscale graph` invocation returns no `summary.totalCost` for the requested client
 - **THEN** the corresponding `cost.todayUSD` or `cost.last30DaysUSD` SHALL be `null`
 
+#### Scenario: Direct executable invocation remains unchanged
+
+- **WHEN** the configured tokscale binary is used on macOS or Linux, or its Windows path ends in `.exe`
+- **THEN** the wrapper SHALL invoke that binary directly and SHALL pass every argument as the same separate array element it received
+
+#### Scenario: Windows npm command shim invocation
+
+- **WHEN** the platform is `win32` and the configured tokscale binary path ends in `.cmd` or `.bat`, including a path containing spaces
+- **THEN** the wrapper SHALL invoke `ComSpec` with a safely quoted command string in which the binary and every argument retain their original token boundaries
+
+#### Scenario: Windows command window remains hidden
+
+- **WHEN** any tokscale subprocess is started on Windows
+- **THEN** the wrapper SHALL request a hidden child-process window without enabling a global shell mode
+
+#### Scenario: Existing failure semantics are preserved
+
+- **WHEN** a tokscale invocation exits non-zero, times out, or produces invalid JSON
+- **THEN** the wrapper SHALL return the existing named tokscale execution or parse error and SHALL NOT classify the failure as a missing installation unless the underlying error code is `ENOENT`
+
 <!-- @trace
-source: swap-tokscale-backend
-updated: 2026-07-22
+source: windows-lan-iphone-support
+updated: 2026-07-26
 code:
-  - src/public/index.html
+  - .agents/skills/spectra-drift/SKILL.md
+  - scripts/windows/setup.ps1
+  - .agents/skills/spectra-propose/SKILL.md
+  - .agents/skills/spectra-archive/SKILL.md
+  - .agents/skills/spectra-ask/SKILL.md
+  - .agents/skills/spectra-debug/SKILL.md
+  - CHANGELOG.md
+  - .agents/skills/spectra-apply/SKILL.md
+  - README.md
+  - .agents/skills/spectra-discuss/SKILL.md
+  - .agents/skills/spectra-audit/SKILL.md
+  - .agents/skills/spectra-ingest/SKILL.md
+  - .agents/skills/spectra-commit/SKILL.md
+  - scripts/windows/start-dashboard.ps1
   - package.json
-  - launchd/com.barry.ai-status-dashboard.plist
-  - src/collectors/tokscaleSnapshot.js
   - src/collectors/tokscale.js
-  - src/server.js
-  - src/providers.js
+tests:
+  - test/tokscale-command.test.js
 -->
