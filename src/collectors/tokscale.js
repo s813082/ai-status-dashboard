@@ -5,6 +5,8 @@
 // JSON 解析失敗、版本偵測。所有對 tokscale 的呼叫都應經由此模組。
 
 const { execFile } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const BIN = process.env.TOKSCALE_BIN || 'tokscale';
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -50,18 +52,41 @@ function escapeCmdCommand(value) {
   return command.replace(CMD_META_CHARS, '^$1');
 }
 
+// Windows 上 execFile 不做 PATHEXT 解析，裸名 'tokscale' 會直接 ENOENT——npm 全域安裝
+// 只放 .cmd／.ps1 shim，沒有 .exe。未指定 TOKSCALE_BIN 時在此補上 PATH 掃描，讓
+// npx／npm start 等未預先解析路徑的啟動方式也能找到。找不到就維持原樣走既有 ENOENT。
+const WIN_SHIM_EXTS = ['.exe', '.cmd', '.bat'];
+
+function resolveWindowsShim(binary, { platform = process.platform, env = process.env } = {}) {
+  if (platform !== 'win32' || path.extname(binary) || binary.includes(path.sep)) return binary;
+  for (const dir of (env.PATH || env.Path || '').split(path.delimiter).filter(Boolean)) {
+    for (const ext of WIN_SHIM_EXTS) {
+      const candidate = path.join(dir, binary + ext);
+      if (fs.existsSync(candidate)) return candidate;
+    }
+  }
+  return binary;
+}
+
 // Windows npm shims are .cmd files. Node cannot execFile() them directly, so only
 // that case goes through ComSpec. Direct executables keep the original argv array.
-function buildInvocation({ binary = BIN, args = [], platform = process.platform, comSpec } = {}) {
+function buildInvocation({
+  binary = BIN,
+  args = [],
+  platform = process.platform,
+  comSpec,
+  env,
+} = {}) {
+  const resolved = resolveWindowsShim(binary, { platform, env });
   const direct = {
-    file: binary,
+    file: resolved,
     args: [...args],
     windowsVerbatimArguments: false,
   };
-  if (platform !== 'win32' || !/\.(?:cmd|bat)$/i.test(binary)) return direct;
+  if (platform !== 'win32' || !/\.(?:cmd|bat)$/i.test(resolved)) return direct;
 
   const command = [
-    escapeCmdCommand(binary),
+    escapeCmdCommand(resolved),
     ...args.map((arg) => escapeCmdToken(arg, { doubleEscape: true })),
   ].join(' ');
 

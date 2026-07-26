@@ -290,6 +290,7 @@ ai-status-dashboard/
 
 | 版本 | 日期 | 重點 |
 | --- | --- | --- |
+| [0.7.1](CHANGELOG.md#071--2026-07-26) | 2026-07-26 | 修復 Windows 未設 `TOKSCALE_BIN` 時因 npm 只有 `.cmd` shim 而抓不到資料（自 0.6.0 起存在）|
 | [0.7.0](CHANGELOG.md#070--2026-07-26) | 2026-07-26 | npx 一行啟動（`bin/cli.js` ＋ LAN URL 輸出）、資料目錄改由 `dataDir.js` 解析、README 重整與 Changelog 表格化 |
 | [0.6.0](CHANGELOG.md#060--2026-07-26) | 2026-07-26 | Windows LAN 支援：setup／start PowerShell 腳本、登入時工作排程、Private-only Firewall rule、tokscale `.cmd`／`.bat` shim 相容 |
 | [0.5.0](CHANGELOG.md#050--2026-07-23) | 2026-07-23 | 矮螢幕／橫向副螢幕自適應：卡片左右並排重排、等比縮放保底、轉向自動歸位 |

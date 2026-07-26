@@ -2,6 +2,17 @@
 
 本專案的所有重要變更都記錄於此檔。格式依循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本號採語意化版本。
 
+## [0.7.1] — 2026-07-26
+
+### Fixed
+
+- **Windows 上未設 `TOKSCALE_BIN` 時抓不到任何資料**：npm 全域安裝只放 `tokscale.cmd`／`.ps1` shim，並不產生 `.exe`，而 `execFile` 在 Windows 不做 PATHEXT 解析，因此裸名 `tokscale` 直接 ENOENT。原先 `buildInvocation` 的 ComSpec 分支只在 binary 已帶 `.cmd`／`.bat` 副檔名時才觸發，等於只有預先解析路徑的 `start-dashboard.ps1` 能運作；`npx`、`npm start`、`node src/server.js` 啟動的 dashboard 全部顯示「無資料」。現在在 win32 且 binary 無副檔名時掃 PATH 尋找 `.exe`／`.cmd`／`.bat` shim，找不到則維持原樣以保留既有 ENOENT 語意。此缺陷自 0.6.0 起存在，由 0.7.0 的 npx 啟動路徑曝出。
+
+### Validation
+
+- 測試 26/26 PASS（新增 4 個 shim 解析回歸測試：PATH 命中 `.cmd`、`.exe` 優先於 `.cmd`、PATH 無 shim 時維持裸名、非 win32 不掃 PATH）。
+- 實機驗證：未設 `TOKSCALE_BIN` 直接啟動，`/api/status` 由 `reachable:false` ＋ `tokscale CLI not found` 轉為 `reachable:true`、`lastError:null` 並帶回真實 Claude／Codex 額度。
+
 ## [0.7.0] — 2026-07-26
 
 ### Added

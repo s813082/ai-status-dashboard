@@ -2,6 +2,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const {
   buildInvocation,
@@ -159,4 +162,77 @@ test('invalid JSON preserves TokscaleError parse semantics', async () => {
     }),
     (err) => err instanceof TokscaleError && /non-JSON output/.test(err.message),
   );
+});
+
+// 回歸：npm 全域安裝只放 .cmd／.ps1 shim，沒有 .exe。未設 TOKSCALE_BIN 時
+// execFile('tokscale') 會直接 ENOENT，導致 npx／npm start 啟動的 Windows
+// dashboard 抓不到任何資料（0.7.0 前僅 start-dashboard.ps1 預先解析路徑才能運作）。
+test('win32 bare binary resolves an npm .cmd shim from PATH', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokscale-shim-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'tokscale.cmd'), '@echo off\n');
+    const invocation = buildInvocation({
+      binary: 'tokscale',
+      args: ['usage', '--json'],
+      platform: 'win32',
+      comSpec: 'C:\Windows\System32\cmd.exe',
+      env: { PATH: dir },
+    });
+    assert.equal(invocation.file, 'C:\Windows\System32\cmd.exe');
+    assert.equal(invocation.windowsVerbatimArguments, true);
+    assert.match(invocation.args[3], /tokscale\.cmd/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('win32 bare binary prefers .exe over .cmd when both exist', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokscale-shim-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'tokscale.exe'), '');
+    fs.writeFileSync(path.join(dir, 'tokscale.cmd'), '@echo off\n');
+    const invocation = buildInvocation({
+      binary: 'tokscale',
+      args: ['usage'],
+      platform: 'win32',
+      env: { PATH: dir },
+    });
+    assert.equal(invocation.file, path.join(dir, 'tokscale.exe'));
+    assert.equal(invocation.windowsVerbatimArguments, false);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('win32 bare binary stays bare when no shim is on PATH, preserving ENOENT', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokscale-empty-'));
+  try {
+    const invocation = buildInvocation({
+      binary: 'tokscale',
+      args: ['usage'],
+      platform: 'win32',
+      env: { PATH: dir },
+    });
+    assert.equal(invocation.file, 'tokscale');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('non-win32 bare binary is never PATH-scanned', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokscale-shim-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'tokscale.cmd'), '@echo off\n');
+    for (const platform of ['darwin', 'linux']) {
+      const invocation = buildInvocation({
+        binary: 'tokscale',
+        args: ['usage'],
+        platform,
+        env: { PATH: dir },
+      });
+      assert.equal(invocation.file, 'tokscale');
+    }
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
