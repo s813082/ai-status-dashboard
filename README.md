@@ -192,13 +192,84 @@ launchctl list | grep ai-status-dashboard        # 應在清單內
 
 ### 在 Windows 上使用
 
-好消息：**tokscale 原生支援 Windows**（不像舊資料源 CodexBar 僅限 macOS/Linux）。理論上：
+Windows 電腦負責執行 Node.js＋tokscale，iPhone 只需與電腦連上同一個可信任的 Private Wi-Fi，即可用 Safari 查看這台電腦的 Claude Code／Codex 狀態。這是單機區網模式，不會聚合其他裝置資料，也不會上傳雲端。
 
-1. 於 Windows 安裝 tokscale CLI 並登入各家（`tokscale codex import` 等）。
-2. 以絕對路徑設定 `TOKSCALE_BIN` 環境變數指向 `tokscale.exe`（或確保在 PATH），`node src/server.js` 啟動。
-3. 常駐可用工作排程器（Task Scheduler）取代 launchd。
+需求：Windows 10/11、Node.js 18 以上、npm，以及目前網路設為 Windows 的「私人網路」。安裝腳本只會開放 Private profile 的 TCP 8787；若目前是 Public 或 DomainAuthenticated，腳本會在修改 Firewall 前停止，不會自動放寬規則。
 
-Windows 上 Claude Code / Codex 的 session log 位於 `%USERPROFILE%\.claude\projects`、`%USERPROFILE%\.codex\sessions`，運作狀態偵測一樣可運作。
+#### 一次安裝與常駐
+
+先在專案根目錄預覽所有動作；`-WhatIf` 不會安裝套件、建立排程、修改 Firewall 或啟動服務：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\windows\setup.ps1 -WhatIf
+```
+
+確認後，以「系統管理員身分」開啟 Windows PowerShell，切到專案根目錄並執行：
+
+```powershell
+npm run setup:windows
+```
+
+腳本會：
+
+1. 驗證 Node.js 18 以上；若找不到 tokscale，使用 npm 全域安裝 `tokscale@latest`。
+2. 驗證 `tokscale --version`、`tokscale usage --json`、`tokscale codex status --json`。若 provider 尚未授權，只會提示要執行的登入／import 步驟，不會索取或記錄 token。
+3. 建立或更新登入時排程「AI Status Dashboard」，使用目前登入者且不儲存密碼。
+4. 建立或更新同名 Windows Firewall inbound rule，只允許 Private profile、TCP 8787，並限制到目前的 `node.exe`。
+5. 立即啟動服務，驗證 localhost 與 LAN `/api/status`，最後列出 iPhone URL。
+
+設定可安全重跑；同名排程與 Firewall rule 會更新，不會累積重複項目。
+
+#### 手動啟動與 iPhone 連線
+
+只想手動啟動服務時，在專案根目錄執行：
+
+```powershell
+npm run start:windows
+```
+
+啟動腳本會從自身位置推導專案路徑，解析 `node.exe` 與 tokscale 的 `.exe`／`.cmd`／`.bat` application shim，排除 `.ps1` shim，並把背景程序的輸出寫入 `logs\dashboard.stdout.log` 與 `logs\dashboard.stderr.log`。
+
+setup 完成後會顯示類似 `http://192.168.1.23:8787` 的實際網址。讓 iPhone 與 Windows 連同一個 Wi-Fi，再用 Safari 開啟該網址；不要使用 `localhost`，那會指向 iPhone 自己。最終 iPhone Safari 顯示與自動更新仍需在實機確認。
+
+Windows 上 Claude Code／Codex 的 session log 位於 `%USERPROFILE%\.claude\projects`、`%USERPROFILE%\.codex\sessions`，既有運作狀態偵測會直接使用這些資料。
+
+#### Windows 除錯
+
+```powershell
+# tokscale 與 provider 狀態
+tokscale --version
+tokscale usage --json
+tokscale codex status --json
+
+# Codex 尚未匯入時（需先確保 Codex CLI 已登入）
+tokscale codex import
+
+# 排程、Firewall、listener 與 API
+Get-ScheduledTask -TaskName 'AI Status Dashboard'
+Get-NetFirewallRule -DisplayName 'AI Status Dashboard' |
+  Get-NetFirewallPortFilter
+Get-NetTCPConnection -State Listen -LocalPort 8787
+Invoke-RestMethod http://localhost:8787/api/status
+
+# 背景服務 log
+Get-Content logs\dashboard.stderr.log -Tail 100
+```
+
+若 setup 回報網路不是 Private，請先在 Windows「設定 → 網路和網際網路 → 目前連線 → 網路設定檔類型」確認該 Wi-Fi 是可信任的私人網路，再重跑；不要把 Firewall rule 改成 Public。若連接埠已被非 Node 程序占用，先辨識該 PID 的用途，不要直接結束未知程序。
+
+#### 移除 Windows 常駐設定
+
+以系統管理員 Windows PowerShell 執行：
+
+```powershell
+Stop-ScheduledTask -TaskName 'AI Status Dashboard' -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName 'AI Status Dashboard' -Confirm:$false
+Get-NetFirewallRule -DisplayName 'AI Status Dashboard' -ErrorAction SilentlyContinue |
+  Remove-NetFirewallRule
+```
+
+以上只移除本專案建立的排程與 Firewall rule，不會移除 Node.js、tokscale、專案檔案或歷史 log。若確定不再需要全域 tokscale，可另行執行 `npm uninstall --global tokscale`。
 
 ---
 
@@ -359,6 +430,25 @@ launchctl bootout gui/$(id -u)/com.barry.ai-status-dashboard          # 停用
 ## Changelog
 
 格式依循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本號採語意化版本。
+
+### [0.6.0] — 2026-07-26
+
+#### Added
+
+- **Windows LAN MVP**：新增 `scripts/windows/setup.ps1` 與 `start-dashboard.ps1`，支援 Windows PowerShell 5.1、Node.js 18+ 檢查、tokscale 安裝／驗證、登入時工作排程、背景啟動與本機／LAN 健康檢查。
+- **Private-only Firewall**：setup 只建立 Private profile、Inbound、TCP 8787 的 allow rule，並限制到目前的 `node.exe`；偵測到非 Private 網路時 fail-closed，不自動開放 Public profile。
+- **Windows command adapter 測試**：覆蓋 macOS／Linux direct executable、Windows `.exe`、`.cmd`／`.bat` ComSpec、空白路徑、參數邊界、ENOENT、timeout、非零 exit 與無效 JSON。
+
+#### Changed
+
+- tokscale 低階封裝在 Windows 遇到 npm `.cmd`／`.bat` shim 時，改由 ComSpec `/d /s /c` 安全執行並隱藏子程序視窗；`.exe`、macOS 與 Linux 行為不變，未啟用全域 `shell: true`。
+- README Windows 章節改為可直接執行的安裝、啟動、iPhone 連線、除錯與移除指南；專案版本升為 `0.6.0`，未新增 npm runtime dependency。
+
+#### Validation
+
+- 完整測試 `22/22 PASS`（既有 12＋Windows adapter 10），PowerShell 5.1 parser 與 setup `-WhatIf` 均通過。
+- Windows 實機確認 tokscale、單一登入排程、單一 Private Firewall rule、Node TCP 8787 listener，以及 localhost／Private LAN `/api/status` HTTP 200；Claude／Codex provider 均有有效 quota windows。
+- 本版本維持單機資料模型，未修改 `/api/status` 契約、前端、macOS launchd 或 Zeabur 多裝置聚合。iPhone Safari 最終顯示與自動更新仍需由使用者在同一 Wi-Fi 實機確認。
 
 ### [0.5.0] — 2026-07-23
 

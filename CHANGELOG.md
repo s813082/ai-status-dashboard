@@ -2,6 +2,18 @@
 
 本專案的所有重要變更都記錄於此檔。格式依循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本號採語意化版本。
 
+## [0.6.0]
+
+### Added
+
+- Windows LAN MVP：新增 PowerShell 5.1 相容的 setup／startup 腳本，可安裝與驗證 tokscale、建立目前使用者登入排程、限制至 `node.exe` 的 Private-only TCP 8787 Firewall rule，並立即驗證 localhost／LAN API 與顯示 iPhone URL。
+- 新增 tokscale Windows command adapter 測試，涵蓋 `.cmd`／`.bat`、`.exe`、macOS／Linux、空白路徑、參數邊界與既有錯誤語意。
+
+### Changed
+
+- tokscale 低階封裝在 Windows 遇到 npm `.cmd`／`.bat` shim 時改由 ComSpec 安全啟動；直接 executable 與 macOS／Linux 行為維持不變，所有子程序隱藏互動視窗。
+- README Windows 章節改為已驗證的安裝、啟動、iPhone 連線、除錯與移除流程。
+
 ## [0.2.0]
 
 ### Added
