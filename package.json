@@ -1,6 +1,6 @@
 {
   "name": "ai-status-dashboard",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "description": "本地常駐 web dashboard，讀 tokscale CLI 顯示 Claude Code / Codex 用量狀態",
   "type": "commonjs",
@@ -9,6 +9,8 @@
   },
   "scripts": {
     "start": "node src/server.js",
+    "start:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/start-dashboard.ps1",
+    "setup:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/setup.ps1",
     "add-pet": "bash scripts/add-pet.sh",
     "test": "node --test test/*.test.js"
   }

@@ -9,6 +9,7 @@ const { execFile } = require('node:child_process');
 const BIN = process.env.TOKSCALE_BIN || 'tokscale';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_BUFFER = 16 * 1024 * 1024; // graph 年資料可能較大
+const CMD_META_CHARS = /([()%!^<>&|;,"'\s])/g;
 
 // 未安裝：呼叫端據此顯示安裝 banner 並退回空狀態
 class TokscaleNotInstalledError extends Error {
@@ -28,17 +29,82 @@ class TokscaleError extends Error {
   }
 }
 
+function escapeCmdToken(value, { doubleEscape = false } = {}) {
+  let token = String(value);
+  if (/[\0\r\n]/.test(token)) {
+    throw new TokscaleError('tokscale command arguments must not contain NUL or newlines');
+  }
+
+  token = token.replace(/(\\*)"/g, '$1$1\\"');
+  token = token.replace(/(\\*)$/, '$1$1');
+  token = `"${token}"`.replace(CMD_META_CHARS, '^$1');
+  if (doubleEscape) token = token.replace(CMD_META_CHARS, '^$1');
+  return token;
+}
+
+function escapeCmdCommand(value) {
+  const command = String(value);
+  if (/[\0\r\n]/.test(command)) {
+    throw new TokscaleError('tokscale binary path must not contain NUL or newlines');
+  }
+  return command.replace(CMD_META_CHARS, '^$1');
+}
+
+// Windows npm shims are .cmd files. Node cannot execFile() them directly, so only
+// that case goes through ComSpec. Direct executables keep the original argv array.
+function buildInvocation({ binary = BIN, args = [], platform = process.platform, comSpec } = {}) {
+  const direct = {
+    file: binary,
+    args: [...args],
+    windowsVerbatimArguments: false,
+  };
+  if (platform !== 'win32' || !/\.(?:cmd|bat)$/i.test(binary)) return direct;
+
+  const command = [
+    escapeCmdCommand(binary),
+    ...args.map((arg) => escapeCmdToken(arg, { doubleEscape: true })),
+  ].join(' ');
+
+  return {
+    file: comSpec || process.env.ComSpec || 'cmd.exe',
+    args: ['/d', '/s', '/c', `"${command}"`],
+    windowsVerbatimArguments: true,
+  };
+}
+
 // 執行 tokscale，resolve stdout 字串。ENOENT → 具名「未安裝」錯誤。
-function run(args, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+function run(
+  args,
+  {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    binary = BIN,
+    platform = process.platform,
+    comSpec = process.env.ComSpec,
+    execFileFn = execFile,
+  } = {},
+) {
   return new Promise((resolve, reject) => {
-    execFile(
-      BIN,
-      args,
-      { timeout: timeoutMs, maxBuffer: MAX_BUFFER },
+    let invocation;
+    try {
+      invocation = buildInvocation({ binary, args, platform, comSpec });
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
+    execFileFn(
+      invocation.file,
+      invocation.args,
+      {
+        timeout: timeoutMs,
+        maxBuffer: MAX_BUFFER,
+        windowsHide: true,
+        windowsVerbatimArguments: invocation.windowsVerbatimArguments,
+      },
       (err, stdout) => {
         if (err) {
           if (err.code === 'ENOENT') {
-            return reject(new TokscaleNotInstalledError(`tokscale CLI not found (bin: ${BIN})`));
+            return reject(new TokscaleNotInstalledError(`tokscale CLI not found (bin: ${binary})`));
           }
           return reject(new TokscaleError(`tokscale ${args.join(' ')} failed: ${err.message}`));
         }
@@ -83,5 +149,6 @@ module.exports = {
   getVersion,
   TokscaleNotInstalledError,
   TokscaleError,
+  buildInvocation,
   BIN,
 };
